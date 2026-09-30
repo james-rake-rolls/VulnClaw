@@ -22,6 +22,12 @@ from pydantic import BaseModel, Field
 
 from vulnclaw.i18n import I18nLoader, _, bi as _rl
 
+# Bilingual markers for a bare, unverified finding. Written in the active UI
+# language but recognised in either, so persisted findings survive a language
+# switch. Kept in sync with finding_similarity._NOISE_TAGS.
+_UNVERIFIED_TAGS = ("[未验证]", "[Unverified]")
+_MISSING_EVIDENCE_MARKERS = ("缺少验证证据", "lacks verification evidence")
+
 # ──────────────────────────────────────────────────────────────
 # Enums
 # ──────────────────────────────────────────────────────────────
@@ -210,12 +216,20 @@ class VulnerabilityFinding(BaseModel):
         is_bare = not self.evidence and not self.vuln_type and not self.remediation
         is_terminal = self.verified or self.verification_status in ("verified", "rejected")
         if is_bare and not is_terminal:
-            if not self.title.startswith("[未验证]"):
-                self.title = f"[未验证] {self.title}"
-            if "缺少验证证据" not in self.description:
+            # The "unverified" marker is written in the active UI language but
+            # recognised in either language, so findings persisted under one
+            # language stay correctly detected after a language switch.
+            if not self.title.startswith(_UNVERIFIED_TAGS):
+                self.title = f'{_rl("[未验证]", "[Unverified]")} {self.title}'
+            if not any(m in self.description for m in _MISSING_EVIDENCE_MARKERS):
                 self.description = (
-                    "(⚠️ 此漏洞缺少验证证据/vuln_type/修复建议三字段，"
-                    "LLM 上报时未附实际测试结果。请补充证据后再作为正式漏洞。)"
+                    _rl(
+                        "(⚠️ 此漏洞缺少验证证据/vuln_type/修复建议三字段，"
+                        "LLM 上报时未附实际测试结果。请补充证据后再作为正式漏洞。)",
+                        "(⚠️ This finding lacks verification evidence / vuln_type / remediation; "
+                        "the LLM reported it without actual test results. Add evidence before "
+                        "treating it as a formal finding.)",
+                    )
                     + (f" {self.description}" if self.description else "")
                 )
             self.lifecycle_status = "needs_manual_review"
@@ -291,7 +305,7 @@ class VulnerabilityFinding(BaseModel):
             return self.vuln_type[:50]
         # Bare finding (no vuln_type, no location): fall back to a title-derived key
         # so distinct placeholders stay distinct in state / findings.json audit.
-        base_title = re.sub(r"^\[未验证\]\s*", "", self.title).strip()
+        base_title = re.sub(r"^\[(?:未验证|Unverified)\]\s*", "", self.title).strip()
         return base_title[:50]
 
     def mark_verified(self, note: str = "", evidence_level: str = "L4") -> None:

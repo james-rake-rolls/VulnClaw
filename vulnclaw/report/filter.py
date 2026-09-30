@@ -346,21 +346,21 @@ def remove_unverified_findings(content: str) -> str:
 
     标记为 [未验证] 的漏洞将被移除。
     """
-    # 移除 [未验证] 标记的漏洞章节
+    # Remove sections marked as unverified (either language: 未验证 / Unverified).
     pattern = re.compile(
-        r"(###\s*\[[^\]]*\]\s*[^\n]*未验证[^\n]*\n[\s\S]*?)(?=###|\Z)",
+        r"(###\s*\[[^\]]*\]\s*[^\n]*(?:未验证|Unverified)[^\n]*\n[\s\S]*?)(?=###|\Z)",
         re.IGNORECASE,
     )
     result = pattern.sub("", content)
 
-    # 移除包含 [未验证] 的行
+    # Remove lines containing the unverified marker.
     lines = result.split("\n")
     filtered_lines = []
     skip_section = False
 
     for line in lines:
-        # 检测未验证章节开始
-        if "[未验证]" in line and line.strip().startswith("###"):
+        # Detect the start of an unverified section.
+        if ("[未验证]" in line or "[Unverified]" in line) and line.strip().startswith("###"):
             skip_section = True
             continue
 

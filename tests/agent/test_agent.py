@@ -64,7 +64,8 @@ class TestVulnerabilityFinding:
         # A bare finding (no evidence/vuln_type/remediation) is quarantined at intake
         # for ANY severity: title prefixed, lifecycle set to needs_manual_review.
         assert "Test Vuln" in finding.title
-        assert finding.title.startswith("[未验证]")
+        # The unverified marker is written in the active UI language.
+        assert finding.title.startswith(("[未验证]", "[Unverified]"))
         assert finding.severity == "Medium"
         assert finding.vuln_type == ""
         assert finding.cve is None

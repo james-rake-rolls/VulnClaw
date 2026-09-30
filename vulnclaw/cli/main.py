@@ -3434,6 +3434,18 @@ def _should_auto_pentest(user_input: str, current_target: Optional[str]) -> bool
             "全部",
             "完整",
             "详细",
+            # English equivalents (English is the default UI language); kept
+            # specific to avoid over-triggering on common substrings.
+            "then ",
+            "output",
+            "save",
+            "write to",
+            "export",
+            "detailed",
+            "thorough",
+            "full report",
+            "complete report",
+            "everything",
         ]
         if any(ind in input_lower for ind in multi_step_indicators):
             return True

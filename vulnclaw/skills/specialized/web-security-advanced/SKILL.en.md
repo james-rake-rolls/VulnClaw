@@ -26,7 +26,7 @@ routing:
     - request_smuggling
     - prototype_pollution
     - business_logic
-  exclude_signals: ["cannot replay", "signing blocker", "replay blocked"]
+  exclude_signals: ["无法重放", "签名阻塞", "重放被阻", "cannot replay", "signing blocker", "replay blocked"]
 ---
 
 # Advanced Web Security Testing Skill

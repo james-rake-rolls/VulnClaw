@@ -112,7 +112,10 @@ def normalize_vuln_type(vuln_type: str) -> str:
 _URL_RE = re.compile(r'https?://[^\s<>"\')\]]+', re.IGNORECASE)
 _TOKEN_RE = re.compile(r"[a-z0-9一-鿿]+", re.IGNORECASE)
 # 标点边界标记（如 [自动]、[已确认]）应在分词前去掉，避免污染词集合
-_NOISE_TAGS = ("[自动]", "[已确认]", "[未验证]")
+_NOISE_TAGS = (
+    "[自动]", "[已确认]", "[未验证]",
+    "[Auto]", "[Confirmed]", "[Unverified]",
+)
 
 
 def _normalize_url_path(url: str) -> str:
