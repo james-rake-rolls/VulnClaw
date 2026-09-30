@@ -1,4 +1,4 @@
-﻿"""VulnClaw CLI main entry point with REPL and sub-commands."""
+"""VulnClaw CLI main entry point with REPL and sub-commands."""
 
 # ruff: noqa: E402
 
@@ -77,7 +77,7 @@ from vulnclaw.config.settings import (
     set_config_value,
 )
 from vulnclaw.config.token_provider import has_llm_credentials
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 from vulnclaw.i18n.phases import localized_phase_name
 from vulnclaw.repl_runner import run_repl_call
 from vulnclaw.target_state.store import (
@@ -2050,45 +2050,45 @@ def scan(
 @app.command("network-scan")
 def network_scan(
     target: Optional[str] = typer.Argument(
-        None, help="目标主机/IP/CIDR，默认使用当前连接的 Wi-Fi 子网"
+        None, help=_rl("目标主机/IP/CIDR，默认使用当前连接的 Wi-Fi 子网", "Target host/IP/CIDR; defaults to the currently connected Wi-Fi subnet")
     ),
     profile: str = typer.Option(
         "adaptive",
         "--profile",
-        help="网络扫描画像：adaptive、fast、thorough、stealth",
+        help=_rl("网络扫描画像：adaptive、fast、thorough、stealth", "Network-scan profile: adaptive, fast, thorough, stealth"),
     ),
-    ports: Optional[str] = typer.Option(None, "--ports", help="端口范围，如 80,443,1-1000"),
+    ports: Optional[str] = typer.Option(None, "--ports", help=_rl("端口范围，如 80,443,1-1000", "Port range, e.g. 80,443,1-1000")),
     max_rounds: int = typer.Option(
-        0, "--max-rounds", help="Agent 后续跟进轮数（0=使用配置默认值）"
+        0, "--max-rounds", help=_rl("Agent 后续跟进轮数（0=使用配置默认值）", "Number of agent follow-up rounds (0 = use the configured default)")
     ),
     parallel_agents: int = typer.Option(
         1,
         "--parallel-agents",
         min=1,
-        help="在已发现的攻击面上并行派生的子 Agent 数量（1 表示不启用并行）",
+        help=_rl("在已发现的攻击面上并行派生的子 Agent 数量（1 表示不启用并行）", "Number of sub-agents to spawn in parallel over the discovered attack surface (1 disables parallelism)"),
     ),
     parallel_depth: int = typer.Option(
         1,
         "--parallel-depth",
         min=1,
-        help="子 Agent 攻击面发现的有界波次数",
+        help=_rl("子 Agent 攻击面发现的有界波次数", "Bounded number of sub-agent attack-surface discovery waves"),
     ),
     worker_rounds: int = typer.Option(
         3,
         "--worker-rounds",
         min=1,
-        help="每个子 Agent worker 的执行轮数",
+        help=_rl("每个子 Agent worker 的执行轮数", "Execution rounds per sub-agent worker"),
     ),
     surface_limit: int = typer.Option(
         20,
         "--surface-limit",
         min=1,
-        help="用于子 Agent 并行派生的最大攻击面数量",
+        help=_rl("用于子 Agent 并行派生的最大攻击面数量", "Maximum attack surfaces used for parallel sub-agent spawning"),
     ),
     safe_probes: bool = typer.Option(
         True,
         "--safe-probes/--no-safe-probes",
-        help="nmap 扫描后默认仅执行非破坏性的验证探测",
+        help=_rl("nmap 扫描后默认仅执行非破坏性的验证探测", "After the nmap scan, run only non-destructive verification probes by default"),
     ),
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
@@ -2186,23 +2186,38 @@ def network_scan(
 
     console.print(
         Panel(
-            f"目标: [bold]{scan_target}[/]\n"
+            _rl(f"目标: [bold]{scan_target}[/]\n", f"Target: [bold]{scan_target}[/]\n")
             + (
-                f"Wi-Fi 接口: [bold]{detected_wifi.interface}[/] ({detected_wifi.address})\n"
+                _rl(
+                    f"Wi-Fi 接口: [bold]{detected_wifi.interface}[/] ({detected_wifi.address})\n",
+                    f"Wi-Fi interface: [bold]{detected_wifi.interface}[/] ({detected_wifi.address})\n",
+                )
                 if detected_wifi
                 else ""
             )
-            +
-            f"画像: [bold]{normalized_profile}[/]\n"
-            f"端口: [bold]{ports or '画像默认'}[/]\n"
-            f"跟进策略: [bold]{'安全探测' if safe_probes else '仅摘要'}[/]\n"
-            f"并行 Agent 数: [bold]{parallel_agents}[/]"
+            + _rl(
+                (
+                    f"画像: [bold]{normalized_profile}[/]\n"
+                    f"端口: [bold]{ports or '画像默认'}[/]\n"
+                    f"跟进策略: [bold]{'安全探测' if safe_probes else '仅摘要'}[/]\n"
+                    f"并行 Agent 数: [bold]{parallel_agents}[/]"
+                ),
+                (
+                    f"Profile: [bold]{normalized_profile}[/]\n"
+                    f"Ports: [bold]{ports or 'profile default'}[/]\n"
+                    f"Follow-up: [bold]{'safe probes' if safe_probes else 'summary only'}[/]\n"
+                    f"Parallel agents: [bold]{parallel_agents}[/]"
+                ),
+            )
             + (
-                f"（深度 {parallel_depth}，每个 worker {worker_rounds} 轮）"
+                _rl(
+                    f"（深度 {parallel_depth}，每个 worker {worker_rounds} 轮）",
+                    f" (depth {parallel_depth}, {worker_rounds} rounds per worker)",
+                )
                 if parallel_agents > 1
                 else ""
             ),
-            title="网络扫描",
+            title=_rl("网络扫描", "Network Scan"),
             border_style="cyan",
         )
     )
