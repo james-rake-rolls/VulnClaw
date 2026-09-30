@@ -15,6 +15,7 @@ from typing import Any
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.plugins.result import PluginFinding, PluginResult, RiskLevel
+from vulnclaw.i18n import bi as _rl
 
 # 插件风险等级 → 漏洞严重度（与 VulnerabilityFinding.severity 取值对齐）
 RISK_TO_SEVERITY: dict[RiskLevel, str] = {
@@ -52,7 +53,7 @@ def plugin_finding_to_vuln_finding(
     source = plugin_id or finding.metadata.get("plugin_id", "")
     description = finding.description
     if source:
-        prefix = f"[插件:{source}] "
+        prefix = _rl(f"[插件:{source}] ", f"[Plugin:{source}] ")
         description = f"{prefix}{description}" if description else prefix.strip()
 
     return VulnerabilityFinding(

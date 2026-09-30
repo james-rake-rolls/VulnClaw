@@ -14,6 +14,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from vulnclaw.config.schema import MCPServerConfig
+from vulnclaw.i18n import bi as _rl
 
 try:
     from mcp import ClientSession, StdioServerParameters
@@ -209,7 +210,7 @@ class ProbeMixin:
                 if subs:
                     detail = "; ".join(str(s) for s in subs)
             if "already connected" in detail.lower():
-                detail += " (请重启 MCP 服务或关闭旧客户端连接)"
+                detail += _rl(" (请重启 MCP 服务或关闭旧客户端连接)", " (restart the MCP service or close the stale client connection)")
             return False, detail, []
 
     def _probe_sse_server(

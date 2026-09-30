@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
 
 
-from vulnclaw.i18n import current_lang
+from vulnclaw.i18n import bi as _rl, current_lang
 from vulnclaw.kb.retriever import KnowledgeRetriever, RetrieverStatus
 
 logger = logging.getLogger(__name__)
@@ -154,8 +154,15 @@ def _collect_kb_context(
         return ""
 
     formatted = retriever.format_for_prompt(deduped, max_entries=5)
-    return (
-        "## 知识库参考（相关 CVE / 利用技巧 / 绕过方法）\n"
-        "以下信息来自本地安全知识库，供参考使用：\n\n"
-        f"{formatted}\n"
+    return _rl(
+        (
+            "## 知识库参考（相关 CVE / 利用技巧 / 绕过方法）\n"
+            "以下信息来自本地安全知识库，供参考使用：\n\n"
+            f"{formatted}\n"
+        ),
+        (
+            "## Knowledge-base reference (related CVEs / exploitation tips / bypass methods)\n"
+            "The following information comes from the local security knowledge base, for reference:\n\n"
+            f"{formatted}\n"
+        ),
     )

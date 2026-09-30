@@ -28,7 +28,7 @@ from vulnclaw.agent.subagent.tooling import (
     reserve_tool_call as _reserve_subagent_tool_call,
 )
 from vulnclaw.agent.tool_result_overrides import pop_raw_tool_output_override
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 
 if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
@@ -320,7 +320,7 @@ async def _execute_single(agent: AgentContext, item: dict[str, Any]) -> dict[str
     except asyncio.CancelledError as exc:
         if not _looks_like_tool_local_cancellation(exc):
             raise
-        logger.warning("工具执行被本地取消 %s: %s", func_name, exc)
+        logger.warning(_rl("工具执行被本地取消 %s: %s", "Tool execution locally cancelled %s: %s"), func_name, exc)
         duration_ms = _elapsed_ms(started)
         content, record, raw = _record_tool_failure_with_record(
             agent, func_name, func_args, exc, duration_ms=duration_ms
@@ -345,7 +345,7 @@ async def _execute_single(agent: AgentContext, item: dict[str, Any]) -> dict[str
             "correction_signal": signal,
         }
     except Exception as exc:
-        logger.warning("工具执行失败 %s: %s", func_name, exc)
+        logger.warning(_rl("工具执行失败 %s: %s", "Tool execution failed %s: %s"), func_name, exc)
         duration_ms = _elapsed_ms(started)
         content, record, raw = _record_tool_failure_with_record(
             agent, func_name, func_args, exc, duration_ms=duration_ms
