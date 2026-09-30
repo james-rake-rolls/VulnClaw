@@ -9,9 +9,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V3 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V3 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import PentestPhase
 from vulnclaw.config.settings import TARGETS_DIR, ensure_dirs
@@ -717,8 +717,8 @@ def _merge_target_state(existing: dict[str, Any], current: dict[str, Any]) -> di
     )
     merged["findings"] = _merge_findings(existing.get("findings", []), current.get("findings", []))
 
-    # [P18 修改] 合并 step_records，不再合并 executed_steps
-    # executed_steps 在序列化时会自动从 step_records 生成
+    # [P18 change] Merge step_records; no longer merge executed_steps
+    # executed_steps is generated automatically from step_records during serialization
     existing_records = existing.get("step_records", [])
     current_records = current.get("step_records", [])
     merged["step_records"] = existing_records + [

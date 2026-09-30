@@ -249,14 +249,14 @@ class AgentCore:
         # Re-bind finding parser to the new runtime object
         self._finding_parser = FindingParser(self.context, self.runtime)
 
-        # 跨周期恢复反思记忆（persistent 模式）：保留失败路径/历史/归因，重置本周期 stuck 计数
+        # Restore reflexion memory across cycles (persistent mode): keep failed paths/history/attribution, reset this cycle's stuck count
         self._restore_reflexion_history()
 
-    # ── Reflexion 跨周期持久化 ───────────────────────────────────────
-    _REFLEXION_ATTEMPT_MEMORY = 50  # 跨周期最多携带的 attempt 条数，限制内存与归因开销
+    # ── Reflexion cross-cycle persistence ───────────────────────────────────────
+    _REFLEXION_ATTEMPT_MEMORY = 50  # Maximum number of attempts carried across cycles, to bound memory and attribution overhead
 
     def _restore_reflexion_history(self) -> None:
-        """从 SessionState 快照恢复反思的记忆部分，但重置每周期 stuck 计数。"""
+        "Restore the memory part of reflexion from the SessionState snapshot, but reset the per-cycle stuck count."
         if not getattr(self.config.session, "reflexion_enabled", True):
             return
         snapshot = getattr(self.context.state, "reflexion_snapshot", None)
@@ -269,18 +269,18 @@ class AgentCore:
             restored = ReflexionState.model_validate(snapshot)
         except Exception:
             return
-        # 记忆：失败路径 / 归因素材 / 最近 attempts / 已知障碍
+        # Memory: failed paths / attribution material / recent attempts / known obstacles
         reflexion.state.failed_paths = restored.failed_paths
         reflexion.state.constraints = restored.constraints
         reflexion.state.attempts = restored.attempts[-self._REFLEXION_ATTEMPT_MEMORY :]
         reflexion.state.last_vuln_type = restored.last_vuln_type
-        # 每周期重置：连败计数 / 同类失败计数 / 升级驱动（reflections）
+        # Reset each cycle: consecutive-failure count / same-category failure count / escalation driver (reflections)
         reflexion.state.consecutive_failures = 0
         reflexion.state.vuln_type_fail_count = 0
         reflexion.state.reflections = []
 
     def _save_reflexion_snapshot(self) -> None:
-        """把当前反思状态写回 SessionState 快照，供下个周期/同目标恢复时复用。"""
+        "Write the current reflexion state back to the SessionState snapshot for reuse in the next cycle / same-target resume."
         if not getattr(self.config.session, "reflexion_enabled", True):
             return
         reflexion = getattr(self.runtime, "reflexion", None)
@@ -453,8 +453,8 @@ class AgentCore:
     def _extract_user_vuln_hint(self, user_input: str) -> str:
         """Extract explicit vulnerability hints from user input.
 
-        When the user says "这个点有SQL注入，测试一下" or "帮我测一下XSS"，
-        returns a directive telling LLM to test that specific vuln immediately.
+        When the user says "this endpoint has SQL injection, test it" or "help me test XSS",
+        returns a directive telling the LLM to test that specific vuln immediately.
         Returns "" if no explicit hint found.
         """
         return extract_user_vuln_hint(user_input)
@@ -594,7 +594,7 @@ class AgentCore:
         """Build context string for the current round in auto loop."""
         return build_round_context(self, round_num, max_rounds)
 
-    # ── 模型主导自主引擎（AgentState 证据记忆 + 证据闸门）────────────────
+    # ── Model-driven autonomous engine (AgentState evidence memory + evidence gate) ────────────────
 
     async def solve(
         self,
@@ -608,7 +608,7 @@ class AgentCore:
         on_event: Optional[Callable[[str, dict], None]] = None,
         task_constraints: Optional[TaskConstraints] = None,
     ) -> Any:
-        """运行模型主导 solve。"""
+        "Run the model-driven solve."
         from vulnclaw.agent.solver import solve as run_solve
 
         detected_target = target or self._detect_target(user_input)
@@ -651,7 +651,7 @@ class AgentCore:
         on_cycle_step: Optional[Callable[[int, int, AgentResult], None]] = None,
         on_cycle_complete: Optional[Callable[[int, "PersistentCycleResult"], None]] = None,
         *,
-        # stream_sink 由 main.py 传入，逐级透传到 call_llm_auto_stream 实现流式输出
+        # stream_sink is passed in from main.py and threaded down to call_llm_auto_stream for streaming output
         stream_sink: Optional["StreamSink"] = None,
         task_constraints: Optional[TaskConstraints] = None,
     ) -> list["PersistentCycleResult"]:
@@ -698,7 +698,7 @@ class AgentCore:
         Only steps with actual discoveries or confirmations count as progress.
         A step is considered NOT meaningful only when it is a PURE failure —
         i.e., it mentions failure indicators AND has no progress indicators at all.
-        If a step has BOTH failure and progress keywords (e.g. "XSS测试超时但发现新路径"),
+        If a step has BOTH failure and progress keywords (e.g. "XSS test timed out but found a new path"),
         it is still meaningful because progress was made.
         """
         return is_meaningful_step(step)

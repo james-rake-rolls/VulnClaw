@@ -318,10 +318,10 @@ def _build_handlers() -> dict[str, Callable[[Any, dict[str, Any]], Awaitable[str
 _HANDLERS: dict[str, Callable[[Any, dict[str, Any]], Awaitable[str]]] = _build_handlers()
 
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: V7 修复 — 将 agent 参数类型从 AgentContext 改为 Any，
-#          消除 intel/ 基础设施层对 agent/ 领域层协议的依赖。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: V7 fix — change the agent parameter type from AgentContext to Any,
+#          removing the intel/ infrastructure layer's dependency on the agent/ domain-layer protocol.
 async def dispatch_intel_tool(agent: Any, tool_name: str, args: dict[str, Any]) -> str:
     """Route an intel tool call to its handler; structured error on unknown name."""
     if tool_name not in INTEL_TOOL_NAMES:

@@ -1,4 +1,4 @@
-﻿"""Autonomous / persistent loop helpers for AgentCore."""
+"""Autonomous / persistent loop helpers for AgentCore."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def _reasoning_enabled(agent: AgentContext) -> bool:
 
 
 def _sync_reasoning_path(agent: AgentContext, path_name: str, *, success: bool) -> None:
-    """把识别到的攻击路径落进结构化推理状态，并刷新优先级。"""
+    "Record the identified attack path into the structured reasoning state and refresh priorities."
     if not path_name or not _reasoning_enabled(agent):
         return
     reasoning = getattr(agent.context.state, "reasoning", None)
@@ -51,7 +51,7 @@ def _sync_reasoning_path(agent: AgentContext, path_name: str, *, success: bool) 
 
 
 def _sync_reasoning_constraint(agent: AgentContext, path_name: str, category: FailureCategory) -> None:
-    """把识别到的障碍（WAF/过滤等）落进结构化推理状态，描述保持稳定以便去重。"""
+    "Record identified obstacles (WAF/filtering, etc.) into the structured reasoning state; keep the description stable for deduplication."
     if not _reasoning_enabled(agent):
         return
     reasoning = getattr(agent.context.state, "reasoning", None)
@@ -240,7 +240,7 @@ async def auto_pentest(
                     vuln_type=detected_path or "",
                 )
 
-            # 把攻击路径与障碍同步进结构化推理状态
+            # Sync the attack path and obstacles into the structured reasoning state
             _sync_reasoning_path(agent, detected_path, success=has_new_progress)
             if failure_category is not None:
                 _sync_reasoning_constraint(agent, detected_path, failure_category)
@@ -250,7 +250,7 @@ async def auto_pentest(
                     if detected_path == agent.runtime.current_attack_path:
                         agent.runtime.same_path_fail_count += 1
                     else:
-                        # 卡住后切换了攻击路径 = 一次反思事件，记录以闭合升级环
+                        # Switching the attack path after getting stuck = one reflexion event; record it to close the escalation loop
                         if (
                             reflexion_on
                             and agent.runtime.current_attack_path
@@ -288,7 +288,7 @@ async def auto_pentest(
         if not result.should_continue:
             break
 
-    # 把本周期反思记忆写回 SessionState 快照，供下个周期/同目标恢复时复用
+    # Write this cycle's reflexion memory back to the SessionState snapshot for reuse in the next cycle / same-target resume
     if hasattr(agent, "_save_reflexion_snapshot"):
         agent._save_reflexion_snapshot()
         agent.context.state.save()
@@ -306,7 +306,7 @@ async def persistent_pentest(
     on_cycle_step: Callable[[int, int, AgentResult], None] | None = None,
     on_cycle_complete: Callable[[int, PersistentCycleResult], None] | None = None,
     *,
-    # stream_sink 由 core.py 透传入，传给 agent.auto_pentest() 实现流式输出
+    # stream_sink is passed through from core.py to agent.auto_pentest() for streaming output
     stream_sink: Any = None,
     task_constraints: TaskConstraints | None = None,
 ) -> list[PersistentCycleResult]:
@@ -368,7 +368,7 @@ async def persistent_pentest(
                 target=agent.context.state.target,
                 max_rounds=rounds_per_cycle,
                 on_step=_make_step_callback(cycle_num),
-                # 透传 stream_sink，使 persistent 模式也支持流式输出
+                # Pass stream_sink through so persistent mode also supports streaming output
                 stream_sink=stream_sink,
                 task_constraints=agent.context.state.task_constraints,
             )

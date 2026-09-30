@@ -13,9 +13,9 @@ from jinja2 import Template
 
 from vulnclaw import __version__
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V2 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V2 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.config.settings import SESSIONS_DIR
@@ -921,9 +921,9 @@ def _generate_attack_summary_from_session(session: SessionState) -> str:
 
 def _build_report_summary_llm_kwargs(config: Any, messages: list[dict[str, Any]]) -> dict[str, Any]:
     """Build Chat Completions kwargs for report summary generation."""
-    # 修改者: Nyaecho
-    # 修改时间: 2026-07-08
-    # 修改原因: V2 修复 — 直接使用 config/llm_utils，消除 AgentContext shim。
+    # Modified by: Nyaecho
+    # Modified: 2026-07-08
+    # Reason: V2 fix — use config/llm_utils directly, removing the AgentContext shim.
     from vulnclaw.config.llm_utils import build_chat_completion_kwargs
 
     return build_chat_completion_kwargs(
@@ -942,12 +942,12 @@ def generate_persistent_cycle_report(
     total_steps: int,
     rounds_per_cycle: int,
     output_path: Optional[str] = None,
-    llm_attack_summary: str = "",  # ★ LLM 生成的攻击路径摘要
+    llm_attack_summary: str = "",  # ★ LLM-generated attack-path summary
     prev_verified_ids: Optional[set] = None,
 ) -> Path:
     """Generate a cycle report for persistent pentest.
 
-    只包含已验证 (verified=True) 的漏洞。
+    Includes only verified (verified=True) findings.
 
     Args:
         session: Current session state with findings.
@@ -968,7 +968,7 @@ def generate_persistent_cycle_report(
         Path to the generated report file.
     """
 
-    # ★ 包含所有 findings（包括 pending 和 confirmed，不只是 verified）
+    # ★ Include all findings (pending and confirmed, not just verified)
     all_findings = session.findings
     verified_findings = deduplicate_report_findings(session.get_verified_findings())
     manual_review_findings = (
@@ -977,10 +977,10 @@ def generate_persistent_cycle_report(
         else []
     )
 
-    # ★ 本周期新增已验证 findings（只统计 verified）
+    # ★ Verified findings newly added this cycle (verified only)
     if prev_verified_ids is not None:
-        # 按 finding_id 身份判定本周期新验证的漏洞，避免用"全部 findings 增量"
-        # 去切片"已验证子集"导致把往期漏洞误标为本周期新增。
+        # Determine this cycle's newly-verified findings by finding_id identity, instead of an "all-findings delta"
+        # slicing the "verified subset", which would mislabel prior findings as new this cycle.
         cycle_findings = [
             f for f in verified_findings if f.finding_id not in prev_verified_ids
         ]
@@ -1020,7 +1020,7 @@ def generate_persistent_cycle_report(
     # Recent steps (last 20 to avoid bloat)
     recent_steps = session.executed_steps[-20:]
 
-    # ★ 攻击路径摘要（过滤 LLM 原始输出中的 think 标签 / 调试标记）
+    # ★ Attack-path summary (filter out think tags / debug markers from the raw LLM output)
     step_summary = session.get_step_summary()
 
     if not llm_attack_summary:
@@ -1037,7 +1037,7 @@ def generate_persistent_cycle_report(
         "generated_at": datetime.now().isoformat(),
         "version": __version__,
         "cycle_findings": cycle_findings,
-        "all_findings": all_findings,  # ★ 包含所有 findings（包括 pending）
+        "all_findings": all_findings,  # ★ Include all findings (including pending)
         **_severity_count_context(verified_findings),
         "recent_steps": recent_steps,
         "recommendations": recommendations,
