@@ -12,6 +12,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from vulnclaw.config.schema import MCPServerConfig, VulnClawConfig
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.config.source_render import render_highlighted_source_block
 
 # 修改者: Nyaecho
@@ -1469,9 +1470,9 @@ class MCPLifecycleManager(ProbeMixin):
             return self._format_fetch_response(response, request)
 
         except ImportError:
-            return "[!] httpx 未安装，无法执行 fetch 请求"
+            return _rl("[!] httpx 未安装，无法执行 fetch 请求", "[!] httpx is not installed; cannot perform the fetch request")
         except Exception as e:
-            return f"[!] fetch 请求失败: {e}"
+            return _rl(f"[!] fetch 请求失败: {e}", f"[!] fetch request failed: {e}")
 
     def _prepare_fetch_request(self, args: dict) -> dict[str, Any]:
         url = str(args.get("url", "") or "").strip()
@@ -1630,11 +1631,11 @@ class MCPLifecycleManager(ProbeMixin):
 
         if tool_name == "save":
             store.save(args.get("key", ""), args.get("value", ""))
-            return f"[+] 已保存: {args.get('key', '')}"
+            return _rl(f"[+] 已保存: {args.get('key', '')}", f"[+] Saved: {args.get('key', '')}")
         elif tool_name == "retrieve":
             value = store.retrieve(args.get("key", ""))
-            return str(value) if value else "[-] 未找到"
-        return "[!] 未知 memory 工具"
+            return str(value) if value else _rl("[-] 未找到", "[-] Not found")
+        return _rl("[!] 未知 memory 工具", "[!] Unknown memory tool")
 
     async def _call_attached_server(
         self, server_name: str, tool_name: str, args: dict

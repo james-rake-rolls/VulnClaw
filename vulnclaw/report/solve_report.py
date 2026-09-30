@@ -17,7 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from vulnclaw.agent.agent_state import AgentState, clip_text, extract_flags, one_line
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 
 _HTTP_PROBE_SECTION_RE = re.compile(
     r"^\[(?P<index>\d+)\]\s+(?P<method>[A-Z]+)\s+(?P<label>.*?)\s+"
@@ -326,25 +326,25 @@ def _render_solution_chain(
     forms = [item.text for item in state.pinned_facts if item.text.startswith("HTML ")]
 
     if linked:
-        lines.append(f"1. 从页面/脚本证据中定位入口：{'; '.join(linked[:4])}。")
+        lines.append(_rl(f"1. 从页面/脚本证据中定位入口：{'; '.join(linked[:4])}。", f"1. Locate the entry point from page/script evidence: {'; '.join(linked[:4])}."))
     elif forms:
-        lines.append(f"1. 从页面表单证据中定位输入面：{'; '.join(forms[:4])}。")
+        lines.append(_rl(f"1. 从页面表单证据中定位输入面：{'; '.join(forms[:4])}。", f"1. Locate the input surface from page form evidence: {'; '.join(forms[:4])}."))
     else:
-        lines.append("1. 通过模型选择的 HTTP/浏览器工具建立目标页面和接口基线。")
+        lines.append(_rl("1. 通过模型选择的 HTTP/浏览器工具建立目标页面和接口基线。", "1. Establish a baseline of the target pages and endpoints using the model-selected HTTP/browser tools."))
 
     if sql_facts:
-        lines.append(f"2. 关键服务端表达式：`{sql_facts[0][len(_SOURCE_SQL_PREFIX):].strip()}`。")
+        lines.append(_rl(f"2. 关键服务端表达式：`{sql_facts[0][len(_SOURCE_SQL_PREFIX):].strip()}`。", f"2. Key server-side expression: `{sql_facts[0][len(_SOURCE_SQL_PREFIX):].strip()}`."))
         lines.append(
-            "3. 利用点来自字符串拼接 SQL。优先从真实表达式推导 payload，而不是泛化枚举。"
+            _rl("3. 利用点来自字符串拼接 SQL。优先从真实表达式推导 payload，而不是泛化枚举。", "3. The exploit point stems from string-concatenated SQL. Derive the payload from the real expression rather than generic enumeration.")
         )
     else:
-        lines.append("2. 根据工具响应差异确认可控参数和可复现的利用路径。")
+        lines.append(_rl("2. 根据工具响应差异确认可控参数和可复现的利用路径。", "2. Confirm the controllable parameters and a reproducible exploit path from differences in tool responses."))
 
     if requests:
         payload_url = requests[0].url
-        lines.append(f"4. 成功复现请求：`{payload_url}`。")
+        lines.append(_rl(f"4. 成功复现请求：`{payload_url}`。", f"4. Successful reproduction request: `{payload_url}`."))
     if flags:
-        lines.append(f"5. 响应中出现目标 proof/flag：`{flags[0]}`。")
+        lines.append(_rl(f"5. 响应中出现目标 proof/flag：`{flags[0]}`。", f"5. Target proof/flag appeared in the response: `{flags[0]}`."))
     return lines
 
 

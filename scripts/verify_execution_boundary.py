@@ -75,19 +75,19 @@ _SPAWN_CALLS = {
 # "operator control plane" sites run fixed commands chosen by the local
 # operator (doctor probes, TUI launcher).
 ALLOWED_SPAWN_SITES: dict[str, str] = {
-    "vulnclaw/agent/builtin_tools.py:437:subprocess.Popen": (
+    "vulnclaw/agent/builtin_tools.py:450:subprocess.Popen": (
         "shared gated process runner for shell/python/PHP execution"
     ),
-    "vulnclaw/agent/builtin_tools.py:622:subprocess.run": (
+    "vulnclaw/agent/builtin_tools.py:635:subprocess.run": (
         "fixed Windows taskkill fallback for the gated process runner"
     ),
-    "vulnclaw/agent/builtin_tools.py:1618:subprocess.run": (
+    "vulnclaw/agent/builtin_tools.py:1638:subprocess.run": (
         "fixed Windows nmap path lookup"
     ),
-    "vulnclaw/agent/builtin_tools.py:1697:subprocess.run": (
+    "vulnclaw/agent/builtin_tools.py:1723:subprocess.run": (
         "structured argv nmap execution constrained by the nmap tool schema"
     ),
-    "vulnclaw/agent/builtin_tools.py:1705:subprocess.run": (
+    "vulnclaw/agent/builtin_tools.py:1731:subprocess.run": (
         "structured argv non-privileged nmap retry"
     ),
     "vulnclaw/report/verifier.py:487:subprocess.run": (

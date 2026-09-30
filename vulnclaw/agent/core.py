@@ -48,7 +48,7 @@ from vulnclaw.agent.system_prompt import build_dynamic_system_prompt
 from vulnclaw.agent.tool_call_manager import safe_parse_tool_args
 from vulnclaw.config.schema import VulnClawConfig, resolve_engine
 from vulnclaw.config.settings import make_openai_client
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 from vulnclaw.kb.experience import ExperienceStore
 from vulnclaw.target_state.store import save_target_state
 
@@ -339,7 +339,7 @@ class AgentCore:
                         api_key="local-proxy", base_url=proxy_base
                     )
                 except ImportError:
-                    raise RuntimeError("请安装 openai 包: pip install openai")
+                    raise RuntimeError(_rl("请安装 openai 包: pip install openai", "Please install the openai package: pip install openai"))
             return self._client
 
         auth_mode = str(getattr(llm, "auth_mode", "") or "static").strip().lower()
@@ -356,7 +356,7 @@ class AgentCore:
                     base_url=llm.base_url,
                 )
             except ImportError:
-                raise RuntimeError("请安装 openai 包: pip install openai")
+                raise RuntimeError(_rl("请安装 openai 包: pip install openai", "Please install the openai package: pip install openai"))
         elif token:
             # Refresh the bearer token in place for rotating / short-lived creds.
             self._client.api_key = token
@@ -526,7 +526,7 @@ class AgentCore:
             self._maybe_auto_save_session()
 
         except Exception as e:
-            result.output = f"[!] Agent 错误: {e}"
+            result.output = _rl(f"[!] Agent 错误: {e}", f"[!] Agent error: {e}")
 
         return result
 

@@ -395,7 +395,7 @@ def _is_openai_reasoning_model(provider: str, model: str) -> bool:
 from vulnclaw.config.llm_utils import (  # noqa: E402
     build_chat_completion_kwargs as _build_chat_completion_kwargs_llm,
 )
-from vulnclaw.i18n import _  # noqa: E402
+from vulnclaw.i18n import _, bi as _rl  # noqa: E402
 
 
 def build_chat_completion_kwargs(
@@ -452,7 +452,7 @@ async def _call_with_persistent_retries_unbudgeted(
 
             retry_attempts += 1
             logger.warning(
-                "%s LLM API 异常响应，第 %d 次重连尝试中... (5s 后重试)",
+                _rl("%s LLM API 异常响应，第 %d 次重连尝试中... (5s 后重试)", "%s abnormal LLM API response; reconnect attempt %d... (retrying in 5s)"),
                 stage_label, retry_attempts,
             )
             await asyncio.sleep(5)
@@ -473,7 +473,7 @@ async def _call_with_persistent_retries_unbudgeted(
                     agent.rotate_api_key()
                     retry_attempts += 1
                     logger.warning(
-                        "%s 当前密钥失败 (%s)，切换到下一个 API 密钥并重试...",
+                        _rl("%s 当前密钥失败 (%s)，切换到下一个 API 密钥并重试...", "%s current key failed (%s); switching to the next API key and retrying..."),
                         stage_label, exc,
                     )
                     continue
@@ -487,7 +487,7 @@ async def _call_with_persistent_retries_unbudgeted(
                 agent.rotate_api_key()
                 retry_attempts += 1
                 logger.warning(
-                    "%s 所有 API 密钥均已限流，第 %d 次重连尝试中... (5s 后重试)",
+                    _rl("%s 所有 API 密钥均已限流，第 %d 次重连尝试中... (5s 后重试)", "%s all API keys are rate-limited; reconnect attempt %d... (retrying in 5s)"),
                     stage_label, retry_attempts,
                 )
                 await asyncio.sleep(5)
@@ -498,7 +498,7 @@ async def _call_with_persistent_retries_unbudgeted(
 
             retry_attempts += 1
             logger.warning(
-                "%s LLM 连接异常，第 %d 次重连尝试中... (%s)",
+                _rl("%s LLM 连接异常，第 %d 次重连尝试中... (%s)", "%s LLM connection error; reconnect attempt %d... (%s)"),
                 stage_label, retry_attempts, exc,
             )
             await asyncio.sleep(5)
@@ -539,10 +539,10 @@ def _format_tool_results_fallback(
     """Build deterministic tool-result text from the model-facing observations."""
 
     parts = [
-        "[tool results processed] 工具调用已执行；未进行额外 LLM 总结；已降级为纯文本结果摘要。"
+        _rl("[tool results processed] 工具调用已执行；未进行额外 LLM 总结；已降级为纯文本结果摘要。", "[tool results processed] Tool calls executed; no additional LLM summary; degraded to a plain-text result summary.")
     ]
     if assistant_text.strip():
-        parts.append(f"模型行动理由: {assistant_text.strip()[:600]}")
+        parts.append(_rl(f"模型行动理由: {assistant_text.strip()[:600]}", f"Model action rationale: {assistant_text.strip()[:600]}"))
     for item in tool_results:
         if not isinstance(item, dict):
             parts.append(str(item))
@@ -554,15 +554,15 @@ def _format_tool_results_fallback(
         tool_call = item.get("tool_call")
         tool_name = getattr(getattr(tool_call, "function", None), "name", "")
         if tool_name:
-            prefix = f"工具 {tool_name}"
+            prefix = _rl(f"工具 {tool_name}", f"Tool {tool_name}")
             if isinstance(duration_ms, int):
                 prefix += f" ({duration_ms}ms)"
             prefix += ": "
         parts.append(prefix + content)
         if correction:
-            parts.append(f"纠偏信号: {correction}")
+            parts.append(_rl(f"纠偏信号: {correction}", f"Correction signal: {correction}"))
     if skipped_info:
-        parts.append("本轮提示: " + "; ".join(skipped_info))
+        parts.append(_rl("本轮提示: ", "This round's notes: ") + "; ".join(skipped_info))
     return "\n".join(parts)
 
 
@@ -846,7 +846,7 @@ def _assemble_tool_calls(tool_calls_chunks: list[dict]) -> list[Any]:
         )
         if not _validate_tool_call(candidate):
             logger.warning(
-                "丢弃不完整的流式 tool_call: id=%r name=%r args=%r",
+                _rl("丢弃不完整的流式 tool_call: id=%r name=%r args=%r", "Discarding incomplete streaming tool_call: id=%r name=%r args=%r"),
                 tc_data["id"],
                 tc_data["function"]["name"],
                 tc_data["function"]["arguments"][:80],
@@ -962,7 +962,7 @@ async def call_llm_stream(
     response_fallback, _ = await _call_with_persistent_retries(
         agent,
         lambda: agent._get_client().chat.completions.create(**kwargs),
-        "单轮",
+        "single turn",
     )
 
     # 降级到非流式 call_llm（有 retry + tool_calls 处理），行为一致
