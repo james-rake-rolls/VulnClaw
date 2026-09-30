@@ -1,13 +1,13 @@
 """VulnClaw Vulnerability Verifier — validate findings before they enter the report.
 
-核心原则: 未经验证的漏洞 = 误报 = 不写入报告
+Core principle: an unverified vulnerability = a false positive = not written to the report
 
-工作流程:
-    1. 接收漏洞假设（pending finding）
-    2. 生成 PoC 代码
-    3. 通过 python_execute 执行 PoC
-    4. 判定结果: verified / rejected
-    5. 只有 verified 的漏洞才能进入报告
+Workflow:
+    1. Receive a vulnerability hypothesis (pending finding)
+    2. Generate PoC code
+    3. Execute the PoC via python_execute
+    4. Decide the result: verified / rejected
+    5. Only verified findings may enter the report
 """
 
 from __future__ import annotations
@@ -22,9 +22,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V2 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V2 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.i18n import bi as _rl
 
@@ -32,76 +32,76 @@ logger = logging.getLogger(__name__)
 
 
 class VerificationStatus(str, Enum):
-    """漏洞验证状态."""
+    "Vulnerability verification status."
 
-    PENDING = "pending"  # 待验证
-    VERIFIED = "verified"  # 验证通过
-    REJECTED = "rejected"  # 验证失败/误报
-    SKIPPED = "skipped"  # 跳过验证（如已确认的事实）
+    PENDING = "pending"  # Pending verification
+    VERIFIED = "verified"  # Verified
+    REJECTED = "rejected"  # Verification failed / false positive
+    SKIPPED = "skipped"  # Verification skipped (e.g. an already-confirmed fact)
 
 
 class VerificationResult(str, Enum):
-    """验证结果详情."""
+    "Verification-result details."
 
     # Verified outcomes
-    VULN_CONFIRMED = "vuln_confirmed"  # 漏洞确认
-    SENSITIVE_DATA_EXPOSED = "sensitive_data"  # 敏感数据泄露
-    SECURITY_BYPASS = "security_bypass"  # 安全限制绕过
+    VULN_CONFIRMED = "vuln_confirmed"  # Vulnerability confirmed
+    SENSITIVE_DATA_EXPOSED = "sensitive_data"  # Sensitive data exposure
+    SECURITY_BYPASS = "security_bypass"  # Security-control bypass
 
     # Rejected outcomes
-    FALSE_POSITIVE = "false_positive"  # 误报
-    NO_RESPONSE_DIFF = "no_response_diff"  # 响应无差异
-    PARAM_INVALID = "param_invalid"  # 参数无效
-    NORMAL_RESPONSE = "normal_response"  # 正常响应
-    TIMEOUT = "timeout"  # 超时
-    ERROR_403_404 = "error_403_404"  # 403/404 正常拒绝
-    EXECUTION_ERROR = "execution_error"  # PoC 执行环境错误（如解释器缺失）
-    APPROVAL_REQUIRED = "approval_required"  # 未获执行审批，PoC 未运行
+    FALSE_POSITIVE = "false_positive"  # False positive
+    NO_RESPONSE_DIFF = "no_response_diff"  # No response difference
+    PARAM_INVALID = "param_invalid"  # Invalid parameter
+    NORMAL_RESPONSE = "normal_response"  # Normal response
+    TIMEOUT = "timeout"  # Timeout
+    ERROR_403_404 = "error_403_404"  # 403/404 normal rejection
+    EXECUTION_ERROR = "execution_error"  # PoC execution-environment error (e.g. missing interpreter)
+    APPROVAL_REQUIRED = "approval_required"  # Execution not approved; PoC did not run
 
 
 @dataclass
 class VerifiedFinding:
-    """经过验证的漏洞发现."""
+    "A verified finding."
 
-    # 来自原始 finding 的信息
+    # Information from the original finding
     original_finding: VulnerabilityFinding
 
-    # 验证状态
+    # Verification status
     status: VerificationStatus = VerificationStatus.PENDING
     result: Optional[VerificationResult] = None
 
-    # PoC 信息
+    # PoC information
     poc_code: Optional[str] = None
     poc_output: Optional[str] = None
     poc_executed_at: Optional[str] = None
 
-    # 验证结论
+    # Verification conclusion
     verified_description: str = ""
     verified_evidence: str = ""
-    verified_severity: str = ""  # 可能根据验证结果调整严重度
+    verified_severity: str = ""  # Severity may be adjusted based on the verification result
 
-    # 排除原因（如果验证失败）
+    # Rejection reason (if verification failed)
     rejection_reason: str = ""
 
-    # 验证者（元信息）
+    # Verifier (metadata)
     verified_by: str = "verifier_module"
     verified_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
 
-# ── PoC 生成器 ────────────────────────────────────────────────────────────────
+# ── PoC generator ────────────────────────────────────────────────────────────────
 
 
 class PoCGenerator:
-    """根据漏洞假设生成 PoC 代码."""
+    "Generate PoC code from a vulnerability hypothesis."
 
-    # 漏洞类型 → PoC 模板映射
+    # Vulnerability type -> PoC template mapping
     #
-    # ⚠️ 模板使用 *单花括号* 作为 Python 语法（dict 字面量、f-string 插值）。
-    # 唯一的模板占位符是 ``{target}`` / ``{payload}`` / ``{baseline_len}`` /
-    # ``{path}``，它们由 :meth:`generate_poc` 通过 ``str.replace`` 精确替换。
-    # 不要使用 ``{{`` / ``}}`` 转义——渲染器不是 ``str.format``，双花括号会原样
-    # 残留到生成的 PoC 中，导致 ``dict`` 字面量变成 ``set``（``TypeError``）或
-    # f-string 打印字面量 ``{var}`` 文本而非插值结果。
+    # ⚠️ The templates use *single braces* as Python syntax (dict literals, f-string interpolation).
+    # The only template placeholders are ``{target}`` / ``{payload}`` / ``{baseline_len}`` /
+    # ``{path}``, replaced exactly by :meth:`generate_poc` via ``str.replace``.
+    # Do not use ``{{`` / ``}}`` escaping — the renderer is not ``str.format``, so double braces would remain
+    # verbatim in the generated PoC, turning a ``dict`` literal into a ``set`` (``TypeError``) or
+    # making an f-string print the literal ``{var}`` text instead of the interpolated result.
     POC_TEMPLATES: dict[str, str] = {
         "sql_injection": """
 import requests
@@ -311,21 +311,21 @@ except Exception as e:
         target: str,
         baseline_len: int = 0,
     ) -> str:
-        """根据漏洞类型生成 PoC 代码.
+        """Generate PoC code based on the vulnerability type.
 
         Args:
-            finding: 漏洞发现
-            target: 目标 URL
-            baseline_len: 正常响应长度（用于对比）
+            finding: the finding
+            target: target URL
+            baseline_len: normal response length (for comparison)
 
         Returns:
-            PoC Python 代码字符串
+            PoC Python code as a string
         """
         vuln_type = (finding.vuln_type or "").lower().replace(" ", "_")
         template = cls.POC_TEMPLATES.get(vuln_type)
 
         if not template:
-            # 通用 PoC 模板
+            # Generic PoC template
             template = cls._generic_template()
 
         payload = cls._guess_payload(finding)
@@ -341,12 +341,13 @@ except Exception as e:
 
     @classmethod
     def _generic_template(cls) -> str:
-        """生成通用 PoC 模板.
+        """Generate the generic PoC template.
 
-        当漏洞类型没有专用模板时使用。通过对比基准响应与注入 payload 后的响应，
-        在常见注入参数上做启发式验证：反射检测、错误/敏感特征扫描、以及状态码/
-        响应长度差异，并输出与 :meth:`VerifierExecutor.parse_result` 一致的
-        ``[CONFIRMED]`` / ``[POSSIBLE]`` / ``[REJECTED]`` 标记。
+        Used when a vulnerability type has no dedicated template. It heuristically verifies common
+        injectable parameters by comparing the baseline response with the response after injecting a
+        payload: reflection detection, error/sensitive-signature scanning, and status-code / response-
+        length differences, emitting ``[CONFIRMED]`` / ``[POSSIBLE]`` / ``[REJECTED]`` markers consistent
+        with :meth:`VerifierExecutor.parse_result`.
         """
         return """
 import requests
@@ -413,7 +414,7 @@ except Exception as e:
 
     @classmethod
     def _guess_payload(cls, finding: VulnerabilityFinding) -> str:
-        """根据漏洞类型猜测 payload."""
+        "Guess a payload based on the vulnerability type."
         vuln_type = (finding.vuln_type or "").lower()
 
         payloads = {
@@ -430,19 +431,19 @@ except Exception as e:
         return "test"
 
 
-# ── 验证执行器 ───────────────────────────────────────────────────────────────
+# ── Verification executor ───────────────────────────────────────────────────────────────
 
 
 class VerifierExecutor:
-    """执行 PoC 验证并判定结果."""
+    "Execute PoC verification and decide the result."
 
-    # Python 解释器路径：使用当前运行的解释器，避免 "python" 在仅有
-    # "python3" 的环境中缺失而被误判为漏洞验证失败。
+    # Python interpreter path: use the currently running interpreter to avoid "python" being
+    # missing in a "python3"-only environment and being misjudged as a verification failure.
     PYTHON_CMD = sys.executable or "python"
 
     @classmethod
     def execute_poc(cls, poc_code: str, timeout: int = 30) -> tuple[int, str]:
-        """执行 PoC 代码.
+        """Execute PoC code.
 
         The generated PoC is arbitrary code: it only runs when a local
         synchronous approval hook has been installed on the ExecutionGate
@@ -450,11 +451,11 @@ class VerifierExecutor:
         auto-execution is refused.
 
         Args:
-            poc_code: PoC Python 代码
-            timeout: 超时秒数
+            poc_code: PoC Python code
+            timeout: timeout in seconds
 
         Returns:
-            (返回码, 输出内容)
+            (return code, output)
         """
         # ── ExecutionGate: generated PoC needs explicit local consent ────
         from vulnclaw.agent.exec_gate import GateRequest, get_execution_gate
@@ -473,7 +474,7 @@ class VerifierExecutor:
                 "operator approval, but approval was not granted.",
             )
 
-        # 写入临时文件
+        # Write to a temp file
         with tempfile.NamedTemporaryFile(
             mode="w",
             suffix=".py",
@@ -484,7 +485,7 @@ class VerifierExecutor:
             temp_path = f.name
 
         try:
-            # 执行 PoC
+            # Execute the PoC
             result = subprocess.run(
                 [cls.PYTHON_CMD, temp_path],
                 capture_output=True,
@@ -502,7 +503,7 @@ class VerifierExecutor:
         except Exception as e:
             return -3, _rl(f"[ERROR] 执行失败: {e}", "[ERROR] Execution failed: ")
         finally:
-            # 清理临时文件
+            # Clean up the temp file
             try:
                 Path(temp_path).unlink()
             except Exception:
@@ -510,30 +511,30 @@ class VerifierExecutor:
 
     @classmethod
     def parse_result(cls, output: str, returncode: int) -> VerificationResult:
-        """解析 PoC 输出，判定验证结果.
+        """Parse the PoC output and decide the verification result.
 
         Args:
-            output: PoC 输出内容
-            returncode: 返回码
+            output: PoC output
+            returncode: return code
 
         Returns:
-            验证结果
+            the verification result
         """
         output_lower = output.lower()
 
-        # 执行失败
+        # Execution failed
         if returncode == -4 or "[refused]" in output_lower:
             return VerificationResult.APPROVAL_REQUIRED
         if returncode == -1:
             return VerificationResult.TIMEOUT
         if returncode in (-2, -3):
-            # -2: Python 解释器缺失；-3: PoC 执行本身抛出异常。
-            # 均为执行环境问题，而非目标返回 403/404。
+            # -2: Python interpreter missing; -3: the PoC execution itself raised an exception.
+            # Both are execution-environment issues, not the target returning 403/404.
             return VerificationResult.EXECUTION_ERROR
         if returncode != 0:
             return VerificationResult.FALSE_POSITIVE
 
-        # 检查确认标记
+        # Check for confirmation markers
         if "[CONFIRMED]" in output or "[VERIFIED]" in output:
             if "敏感信息" in output or "sensitive" in output_lower:
                 return VerificationResult.SENSITIVE_DATA_EXPOSED
@@ -541,33 +542,33 @@ class VerifierExecutor:
                 return VerificationResult.SECURITY_BYPASS
             return VerificationResult.VULN_CONFIRMED
 
-        # 检查拒绝标记
+        # Check for rejection markers
         if "[REJECTED]" in output or "[FALSE]" in output:
             return VerificationResult.FALSE_POSITIVE
 
-        # 检查响应差异
+        # Check for response differences
         if "[POSSIBLE]" in output:
             return VerificationResult.NO_RESPONSE_DIFF
 
-        # 检查正常响应
+        # Check for a normal response
         if returncode == 0 and "[CONFIRMED]" not in output:
             return VerificationResult.NORMAL_RESPONSE
 
         return VerificationResult.FALSE_POSITIVE
 
 
-# ── 主验证器 ────────────────────────────────────────────────────────────────
+# ── Main verifier ────────────────────────────────────────────────────────────────
 
 
 class VulnerabilityVerifier:
-    """漏洞验证器 — 核心验证流程."""
+    "Vulnerability verifier — the core verification flow."
 
     def __init__(self, target: str, baseline_len: int = 0) -> None:
-        """初始化验证器.
+        """Initialize the verifier.
 
         Args:
-            target: 目标 URL
-            baseline_len: 正常响应长度
+            target: target URL
+            baseline_len: normal response length
         """
         self.target = target
         self.baseline_len = baseline_len
@@ -576,17 +577,17 @@ class VulnerabilityVerifier:
         self.skipped_findings: list[VerifiedFinding] = []
 
     def verify(self, finding: VulnerabilityFinding) -> VerifiedFinding:
-        """验证一个漏洞发现.
+        """Verify a single finding.
 
         Args:
-            finding: 漏洞发现
+            finding: the finding
 
         Returns:
-            验证后的发现（含状态和证据）
+            the verified finding (with status and evidence)
         """
         vf = VerifiedFinding(original_finding=finding)
 
-        # 生成 PoC
+        # Generate the PoC
         poc_code = PoCGenerator.generate_poc(
             finding=finding,
             target=self.target,
@@ -594,17 +595,17 @@ class VulnerabilityVerifier:
         )
         vf.poc_code = poc_code
 
-        # 执行 PoC
+        # Execute the PoC
         returncode, output = VerifierExecutor.execute_poc(poc_code)
         vf.poc_output = output
 
-        # 解析结果
+        # Parse the result
         result = VerifierExecutor.parse_result(output, returncode)
         vf.result = result
         if result != VerificationResult.APPROVAL_REQUIRED:
             vf.poc_executed_at = datetime.now().isoformat()
 
-        # 根据结果判定状态
+        # Determine the status from the result
         if result in (
             VerificationResult.VULN_CONFIRMED,
             VerificationResult.SENSITIVE_DATA_EXPOSED,
@@ -624,13 +625,13 @@ class VulnerabilityVerifier:
         return vf
 
     def verify_batch(self, findings: list[VulnerabilityFinding]) -> list[VerifiedFinding]:
-        """批量验证漏洞发现.
+        """Verify findings in batch.
 
         Args:
-            findings: 漏洞发现列表
+            findings: list of findings
 
         Returns:
-            验证后的发现列表（只包含 verified）
+            the list of verified findings (verified only)
         """
         verified = []
 
@@ -642,14 +643,14 @@ class VulnerabilityVerifier:
         return verified
 
     def _build_verified_finding(self, output: str) -> None:
-        """构建验证通过的发现详情."""
+        "Build the detail for a verified finding."
         vf = self.verified_findings[-1] if self.verified_findings else None
         if not vf:
             return
 
         original = vf.original_finding
 
-        # 从输出中提取确认信息
+        # Extract confirmation info from the output
         confirmed_lines = [
             line.strip()
             for line in output.split("\n")
@@ -662,21 +663,21 @@ class VulnerabilityVerifier:
             else _rl("PoC 验证确认漏洞存在", "PoC verification confirmed the vulnerability exists")
         )
         vf.verified_evidence = "\n".join(confirmed_lines) if confirmed_lines else output[:500]
-        vf.verified_severity = original.severity  # 保持原严重度，可根据结果调整
+        vf.verified_severity = original.severity  # Keep the original severity; may be adjusted based on the result
 
     def _build_rejected_finding(
         self,
         result: VerificationResult,
         output: str,
     ) -> None:
-        """构建验证失败的发现详情."""
+        "Build the detail for a rejected finding."
         vf = self.rejected_findings[-1] if self.rejected_findings else None
         if not vf:
             return
 
         original = vf.original_finding
 
-        # 排除原因映射
+        # Rejection-reason mapping
         rejection_reasons = {
             VerificationResult.FALSE_POSITIVE: _rl("PoC 执行后未检测到漏洞特征，判定为误报", "No vulnerability signature detected after PoC execution; judged a false positive"),
             VerificationResult.NO_RESPONSE_DIFF: _rl("响应无差异，参数无效或未触发漏洞", "No response difference; the parameter is invalid or did not trigger the vulnerability"),
@@ -692,19 +693,19 @@ class VulnerabilityVerifier:
             _rl(f"验证失败，原因: {result.value}", "Verification failed, reason: "),
         )
 
-        # 记录排除原因，但不加入报告
+        # Record the rejection reason, but do not add it to the report
         logger.info(_rl("排除漏洞: %s | 原因: %s", "Excluded finding: %s | reason: %s"), original.title, vf.rejection_reason)
 
     def get_verified_report_findings(self) -> list[VulnerabilityFinding]:
-        """获取可写入报告的漏洞列表.
+        """Get the findings eligible for the report.
 
-        只返回验证通过的漏洞，验证失败的不返回。
+        Returns only verified findings; rejected ones are excluded.
         """
         result = []
 
         for vf in self.verified_findings:
             if vf.status == VerificationStatus.VERIFIED:
-                # 克隆 finding 并更新验证信息
+                # Clone the finding and update its verification info
                 finding = vf.original_finding.model_copy()
                 finding.evidence = vf.verified_evidence
                 finding.description = vf.verified_description
@@ -722,7 +723,7 @@ class VulnerabilityVerifier:
         return result
 
     def get_summary(self) -> dict[str, Any]:
-        """获取验证摘要."""
+        "Get the verification summary."
         return {
             "total": (
                 len(self.verified_findings)
