@@ -128,3 +128,16 @@ def current_lang() -> str:
         init_i18n()
     return _translator.lang
 
+
+def bi(zh: str, en: str) -> str:
+    """Return the English or Chinese variant based on the active UI language.
+
+    A lightweight inline alternative to :func:`_` for dense, one-off bilingual
+    strings (tool descriptions, tool-result messages, report fragments) where
+    keeping the English text next to its Chinese source is clearer than
+    threading a translation key through ``en.json``/``zh.json``. English is the
+    default language, so ``en`` is served unless the active UI language is
+    Chinese.
+    """
+    return en if current_lang() == "en" else zh
+

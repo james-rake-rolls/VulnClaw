@@ -1058,8 +1058,11 @@ class TestAgentCore:
         agent = self._make_agent()
         context = agent._get_active_skill_context(user_input="测试SQL注入")
         assert context is not None
-        # Should match web-security-advanced
-        assert "注入" in context, f"Expected '注入' in skill context for SQL injection input, got: {context[:100]}"
+        # Should match web-security-advanced. Skill content is served in the
+        # active UI language (English by default), so accept either language.
+        assert "注入" in context or "injection" in context.lower(), (
+            f"Expected an SQL-injection skill context, got: {context[:100]}"
+        )
 
     def test_skill_context_reverse(self):
         agent = self._make_agent()

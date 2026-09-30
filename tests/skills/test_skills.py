@@ -500,9 +500,16 @@ class TestCryptoTools:
     def test_base64_decode_rejects_invalid_input(self):
         from vulnclaw.skills.crypto_tools import execute
 
+        from vulnclaw.i18n import init_i18n
+
         result = execute("base64_decode", "!!!!")
         assert result["success"] is False
-        assert "Base64 解码失败" in result["error"]
+        # Error message is served in the active UI language; pin each explicitly.
+        init_i18n("en")
+        assert "Base64 decode failed" in execute("base64_decode", "!!!!")["error"]
+        init_i18n("zh")
+        assert "Base64 解码失败" in execute("base64_decode", "!!!!")["error"]
+        init_i18n("en")
 
     def test_base64_encode(self):
         from vulnclaw.skills.crypto_tools import execute
@@ -571,9 +578,16 @@ class TestCryptoTools:
     def test_unknown_operation(self):
         from vulnclaw.skills.crypto_tools import execute
 
+        from vulnclaw.i18n import init_i18n
+
         result = execute("unknown_op", "test")
         assert result["success"] is False
-        assert "未知操作" in result["error"]
+        # Error message is served in the active UI language; pin each explicitly.
+        init_i18n("en")
+        assert "Unknown operation" in execute("unknown_op", "test")["error"]
+        init_i18n("zh")
+        assert "未知操作" in execute("unknown_op", "test")["error"]
+        init_i18n("en")
 
     def test_unicode_decode(self):
         from vulnclaw.skills.crypto_tools import execute

@@ -19,16 +19,11 @@ from vulnclaw import __version__
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.config.settings import SESSIONS_DIR
-from vulnclaw.i18n import _, current_lang
+from vulnclaw.i18n import _, bi as _rl, current_lang
 from vulnclaw.i18n.phases import localized_phase_name, localized_report_phase_heading
 from vulnclaw.report.filter import ReportContentFilter, deduplicate_report_findings
 from vulnclaw.report.findings_output import write_findings_artifacts
 from vulnclaw.report.poc_builder import generate_pocs
-
-
-def _rl(zh: str, en: str) -> str:
-    """Return the English or Chinese variant based on the active UI language."""
-    return en if current_lang() == "en" else zh
 
 logger = logging.getLogger(__name__)
 
@@ -1291,14 +1286,15 @@ def _extract_location_summary(finding: VulnerabilityFinding) -> str:
 def _build_repro_summary(finding: VulnerabilityFinding) -> str:
     parts: list[str] = []
     if finding.poc_script:
-        parts.append(f"运行 PoC 脚本: {finding.poc_script}")
+        parts.append(_rl(f"运行 PoC 脚本: {finding.poc_script}", f"Run PoC script: {finding.poc_script}"))
     if finding.verification_note:
-        parts.append(f"验证说明: {finding.verification_note}")
+        parts.append(_rl(f"验证说明: {finding.verification_note}", f"Verification note: {finding.verification_note}"))
     elif finding.evidence:
-        parts.append(f"根据已验证证据复现: {finding.evidence[:160]}")
+        parts.append(_rl(f"根据已验证证据复现: {finding.evidence[:160]}", f"Reproduce from verified evidence: {finding.evidence[:160]}"))
     if finding.verified_at:
-        parts.append(f"验证时间: {finding.verified_at}")
-    return "；".join(parts) if parts else "暂无可用复现说明"
+        parts.append(_rl(f"验证时间: {finding.verified_at}", f"Verified at: {finding.verified_at}"))
+    sep = _rl("；", "; ")
+    return sep.join(parts) if parts else _rl("暂无可用复现说明", "No reproduction notes available")
 
 
 def _format_task_constraints_summary(session: SessionState) -> str:
@@ -1354,12 +1350,13 @@ def _build_report_finding(finding: VulnerabilityFinding) -> dict[str, Any]:
 def _render_verified_finding_details(findings: list[VulnerabilityFinding], heading: str) -> str:
     lines = [heading, ""]
     for idx, finding in enumerate(findings, 1):
-        location = _extract_location_summary(finding) or "未定位 / 未提取到 URL"
+        location = _extract_location_summary(finding) or _rl("未定位 / 未提取到 URL", "Not located / no URL extracted")
+        vuln_type = finding.vuln_type or _rl("未分类", "Uncategorized")
         lines.append(f"### {idx}. {finding.title} [{finding.severity}]")
-        lines.append(f"- 漏洞类型: {finding.vuln_type or '未分类'}")
-        lines.append(f"- 位置 / URL: {location}")
+        lines.append(_rl(f"- 漏洞类型: {vuln_type}", f"- Vulnerability type: {vuln_type}"))
+        lines.append(_rl(f"- 位置 / URL: {location}", f"- Location / URL: {location}"))
         if finding.evidence:
-            lines.append(f"- 验证证据: {finding.evidence}")
-        lines.append(f"- 复现 / PoC: {_build_repro_summary(finding)}")
+            lines.append(_rl(f"- 验证证据: {finding.evidence}", f"- Verification evidence: {finding.evidence}"))
+        lines.append(_rl(f"- 复现 / PoC: {_build_repro_summary(finding)}", f"- Reproduction / PoC: {_build_repro_summary(finding)}"))
         lines.append("")
     return "\n".join(lines).rstrip()
