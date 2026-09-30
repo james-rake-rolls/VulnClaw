@@ -1397,10 +1397,10 @@ class TestAgentCore:
         round1 = agent._build_round_context(1, 5)
         round5 = agent._build_round_context(5, 5)
 
-        assert "当前任务硬约束" in round1
-        assert "仅允许测试端口: 443" in round1
-        assert "当前任务硬约束" in round5
-        assert "仅允许测试端口: 443" in round5
+        assert "当前任务硬约束" in round1 or "Current Task Hard Constraints" in round1
+        assert "仅允许测试端口: 443" in round1 or "Allowed ports only: 443" in round1
+        assert "当前任务硬约束" in round5 or "Current Task Hard Constraints" in round5
+        assert "仅允许测试端口: 443" in round5 or "Allowed ports only: 443" in round5
 
     @pytest.mark.asyncio
     async def test_persistent_pentest_keeps_constraints_in_followup_cycles(self):
@@ -1428,8 +1428,8 @@ class TestAgentCore:
 
         assert len(captured_inputs) == 2
         assert "只测试 443 端口" in captured_inputs[0]
-        assert "当前任务硬约束" in captured_inputs[1]
-        assert "仅允许测试端口: 443" in captured_inputs[1]
+        assert "当前任务硬约束" in captured_inputs[1] or "Current Task Hard Constraints" in captured_inputs[1]
+        assert "仅允许测试端口: 443" in captured_inputs[1] or "Allowed ports only: 443" in captured_inputs[1]
 
     def test_reset_runtime_state_clears_previous_run_contamination(self):
         from vulnclaw.agent.context import PentestPhase

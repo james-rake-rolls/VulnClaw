@@ -20,7 +20,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from vulnclaw.i18n import I18nLoader, _
+from vulnclaw.i18n import I18nLoader, _, bi as _rl
 
 # ──────────────────────────────────────────────────────────────
 # Enums
@@ -348,27 +348,39 @@ class TaskConstraints(BaseModel):
         if self.is_empty():
             return ""
 
-        lines = ["## 当前任务硬约束"]
+        lines = [_rl("## 当前任务硬约束", "## Current Task Hard Constraints")]
         if self.allowed_ports:
-            lines.append(f"- 仅允许测试端口: {', '.join(str(p) for p in self.allowed_ports)}")
+            joined = ", ".join(str(p) for p in self.allowed_ports)
+            lines.append(_rl(f"- 仅允许测试端口: {joined}", f"- Allowed ports only: {joined}"))
         if self.blocked_ports:
-            lines.append(f"- 禁止测试端口: {', '.join(str(p) for p in self.blocked_ports)}")
+            joined = ", ".join(str(p) for p in self.blocked_ports)
+            lines.append(_rl(f"- 禁止测试端口: {joined}", f"- Blocked ports: {joined}"))
         if self.allowed_hosts:
-            lines.append(f"- 仅允许测试主机: {', '.join(self.allowed_hosts)}")
+            joined = ", ".join(self.allowed_hosts)
+            lines.append(_rl(f"- 仅允许测试主机: {joined}", f"- Allowed hosts only: {joined}"))
         if self.blocked_hosts:
-            lines.append(f"- 禁止测试主机: {', '.join(self.blocked_hosts)}")
+            joined = ", ".join(self.blocked_hosts)
+            lines.append(_rl(f"- 禁止测试主机: {joined}", f"- Blocked hosts: {joined}"))
         if self.allowed_paths:
-            lines.append(f"- 仅允许测试路径: {', '.join(self.allowed_paths)}")
+            joined = ", ".join(self.allowed_paths)
+            lines.append(_rl(f"- 仅允许测试路径: {joined}", f"- Allowed paths only: {joined}"))
         if self.blocked_paths:
-            lines.append(f"- 禁止测试路径: {', '.join(self.blocked_paths)}")
+            joined = ", ".join(self.blocked_paths)
+            lines.append(_rl(f"- 禁止测试路径: {joined}", f"- Blocked paths: {joined}"))
         if self.allowed_actions:
-            lines.append(f"- 仅允许动作: {', '.join(self.allowed_actions)}")
+            joined = ", ".join(self.allowed_actions)
+            lines.append(_rl(f"- 仅允许动作: {joined}", f"- Allowed actions only: {joined}"))
         if self.blocked_actions:
-            lines.append(f"- 禁止动作: {', '.join(self.blocked_actions)}")
+            joined = ", ".join(self.blocked_actions)
+            lines.append(_rl(f"- 禁止动作: {joined}", f"- Blocked actions: {joined}"))
         if self.notes:
-            lines.append(f"- 其他限制: {'; '.join(self.notes)}")
+            joined = "; ".join(self.notes)
+            lines.append(_rl(f"- 其他限制: {joined}", f"- Other restrictions: {joined}"))
         if self.strict_mode:
-            lines.append("- 严格模式: 超出范围时只记录，不主动测试，不调用工具执行。")
+            lines.append(_rl(
+                "- 严格模式: 超出范围时只记录，不主动测试，不调用工具执行。",
+                "- Strict mode: out-of-scope items are only logged, never actively tested, and no tools are executed.",
+            ))
         return "\n".join(lines)
 
 
