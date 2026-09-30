@@ -196,9 +196,17 @@ class TestSkillLoader:
             "secknowledge-skill", "web-sqli-fushuling-one-pass.md"
         )
         assert content is not None
-        assert "SQL 注入一命通关" in content
+        # Content is served in the active UI language; pin each explicitly.
         assert "fushuling.com" in content
         assert "sqlmap" in content
+        zh = load_skill_reference(
+            "secknowledge-skill", "web-sqli-fushuling-one-pass.md", lang="zh"
+        )
+        assert "SQL 注入一命通关" in zh
+        en = load_skill_reference(
+            "secknowledge-skill", "web-sqli-fushuling-one-pass.md", lang="en"
+        )
+        assert "SQL Injection One-Pass" in en
 
     def test_load_skill_reference_nonexistent(self):
         from vulnclaw.skills.loader import load_skill_reference
