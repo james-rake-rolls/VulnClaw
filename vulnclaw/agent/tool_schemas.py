@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from vulnclaw.i18n import bi as _rl
+
 
 def append_builtin_tool_schemas(
     append_tool: Callable[[dict[str, Any]], None],
@@ -36,11 +38,11 @@ def append_builtin_tool_schemas(
                     "properties": {
                         "skill_name": {
                             "type": "string",
-                            "description": "Skill 名称,如 client-reverse, web-security-advanced, ai-mcp-security, intranet-pentest-advanced, pentest-tools, rapid-checklist, crypto-toolkit, ctf-web, ctf-crypto, ctf-misc, osint-recon, secknowledge-skill",
+                            "description": _rl("Skill 名称,如 client-reverse, web-security-advanced, ai-mcp-security, intranet-pentest-advanced, pentest-tools, rapid-checklist, crypto-toolkit, ctf-web, ctf-crypto, ctf-misc, osint-recon, secknowledge-skill", "Skill name, e.g. client-reverse, web-security-advanced, ai-mcp-security, intranet-pentest-advanced, pentest-tools, rapid-checklist, crypto-toolkit, ctf-web, ctf-crypto, ctf-misc, osint-recon, secknowledge-skill"),
                         },
                         "reference_name": {
                             "type": "string",
-                            "description": "参考文档文件名,如 02-client-api-reverse-and-burp.md, web-injection.md, encoding-cheatsheet.md",
+                            "description": _rl("参考文档文件名,如 02-client-api-reverse-and-burp.md, web-injection.md, encoding-cheatsheet.md", "Reference document filename, e.g. 02-client-api-reverse-and-burp.md, web-injection.md, encoding-cheatsheet.md"),
                         },
                     },
                     "required": ["skill_name", "reference_name"],
@@ -400,38 +402,38 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "python_execute",
                 "description": (
-                    "执行 Python 代码片段。用于:构造复杂 HTTP 请求并解析响应、"
+                    _rl("执行 Python 代码片段。用于:构造复杂 HTTP 请求并解析响应、"
                     "做编码转换和数据处理、批量测试不同 payload、比较响应差异、"
                     "执行数学计算等。代码在受限环境中执行,超时 30 秒。"
                     "预装库:requests, beautifulsoup4, pycryptodome, base64, json, re 等。"
                     "普通 HTTP/HTTPS 请求优先使用 fetch 或 http_probe_batch,避免用 Python 手写请求浪费上下文;"
-                    "只有需要复杂解析、生成 payload 或批量逻辑时再使用此工具。"
+                    "只有需要复杂解析、生成 payload 或批量逻辑时再使用此工具。", "Execute a Python code snippet. Useful for building complex HTTP requests and parsing responses, encoding conversions and data processing, batch-testing different payloads, comparing response differences, doing math, etc. Code runs in a restricted environment with a 30-second timeout. Preinstalled libraries: requests, beautifulsoup4, pycryptodome, base64, json, re, and others. For ordinary HTTP/HTTPS requests prefer fetch or http_probe_batch to avoid wasting context on hand-written Python requests; use this tool only when you need complex parsing, payload generation, or batch logic.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "code": {
                             "type": "string",
-                            "description": "要执行的 Python 代码。支持多行,可 import 标准库和 requests/bs4 等。",
+                            "description": _rl("要执行的 Python 代码。支持多行,可 import 标准库和 requests/bs4 等。", "The Python code to execute. Multi-line is supported; you may import the standard library and requests/bs4, etc."),
                         },
                         "purpose": {
                             "type": "string",
-                            "description": "简要说明执行目的(用于审计日志),如'构造HTTP请求测试弱比较绕过'",
+                            "description": _rl("简要说明执行目的(用于审计日志),如'构造HTTP请求测试弱比较绕过'", "A brief description of the purpose (for the audit log), e.g. 'build an HTTP request to test loose-comparison bypass'"),
                         },
                         "risk_self_assessment": {
                             "type": "string",
                             "enum": ["safe", "review"],
                             "description": (
-                                "你对该段代码风险的自我判断。'review' 会请求操作者人工批准后"
+                                _rl("你对该段代码风险的自我判断。'review' 会请求操作者人工批准后"
                                 "才执行(推荐用于触碰凭据、宿主配置或具破坏性的代码);"
                                 "'safe'/省略不改变本工具始终需要审批的默认行为。"
-                                "自评只能升级为人工审核,不能使被拦命令放行。"
+                                "自评只能升级为人工审核,不能使被拦命令放行。", "Your own risk judgement for this code. 'review' requests explicit operator approval before it runs (recommended for anything touching credentials, host config, or destructive code); 'safe' or omitted does not change this tool's default of always requiring approval. Self-assessment can only escalate to human review — it can never make a blocked command run.")
                             ),
                         },
                         "assessment_reason": {
                             "type": "string",
                             "maxLength": 300,
-                            "description": "展示给审批者的自评理由。",
+                            "description": _rl("展示给审批者的自评理由。", "The self-assessment reason shown to the approver."),
                         },
                     },
                     "required": ["code"],
@@ -446,33 +448,33 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "crypto_decode",
                 "description": (
-                    "编码解码与加解密工具。遇到 base64/hex/URL/HTML/Unicode 编码字符串、"
+                    _rl("编码解码与加解密工具。遇到 base64/hex/URL/HTML/Unicode 编码字符串、"
                     "需要计算哈希、解密 AES/DES、解析 JWT 等场景时调用此工具。"
                     "重要:不要自行脑补解码结果,始终使用此工具确保准确性。"
                     "支持操作:base64_encode/decode, base32_encode/decode, base58_encode/decode, "
                     "hex_encode/decode, url_encode/decode, html_encode/decode, unicode_encode/decode, "
                     "rot13_encode/decode, caesar_encode/decode, morse_encode/decode, "
                     "md5_hash, sha1_hash, sha256_hash, sha512_hash, "
-                    "aes_encrypt/decrypt, jwt_decode/encode, auto_decode"
+                    "aes_encrypt/decrypt, jwt_decode/encode, auto_decode", "Encoding/decoding and encryption/decryption tool. Call it for base64/hex/URL/HTML/Unicode encoded strings, hash computation, AES/DES decryption, JWT parsing, and similar tasks. Important: do not guess decoding results yourself; always use this tool for accuracy. Supported operations: base64_encode/decode, base32_encode/decode, base58_encode/decode, hex_encode/decode, url_encode/decode, html_encode/decode, unicode_encode/decode, rot13_encode/decode, caesar_encode/decode, morse_encode/decode, md5_hash, sha1_hash, sha256_hash, sha512_hash, aes_encrypt/decrypt, jwt_decode/encode, auto_decode")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "operation": {"type": "string", "description": "操作名称"},
+                        "operation": {"type": "string", "description": _rl("操作名称", "Operation name")},
                         "input": {
                             "type": "string",
-                            "description": "待处理的输入字符串(待编码/解码/哈希/加密的文本)",
+                            "description": _rl("待处理的输入字符串(待编码/解码/哈希/加密的文本)", "The input string to process (the text to encode/decode/hash/encrypt)"),
                         },
                         "key": {
                             "type": "string",
-                            "description": "加密/解密密钥(AES/DES 需要,16/24/32字节)",
+                            "description": _rl("加密/解密密钥(AES/DES 需要,16/24/32字节)", "Encryption/decryption key (required for AES/DES, 16/24/32 bytes)"),
                         },
-                        "iv": {"type": "string", "description": "AES 初始化向量(16字节,可选)"},
+                        "iv": {"type": "string", "description": _rl("AES 初始化向量(16字节,可选)", "AES initialization vector (16 bytes, optional)")},
                         "shift": {
                             "type": "integer",
-                            "description": "Caesar 密码位移量(默认3,解码时不提供则暴力所有位移)",
+                            "description": _rl("Caesar 密码位移量(默认3,解码时不提供则暴力所有位移)", "Caesar cipher shift amount (default 3; if omitted when decoding, brute-forces all shifts)"),
                         },
-                        "secret": {"type": "string", "description": "JWT 签名密钥"},
+                        "secret": {"type": "string", "description": _rl("JWT 签名密钥", "JWT signing key")},
                     },
                     "required": ["operation", "input"],
                 },
@@ -486,37 +488,37 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "nmap_scan",
                 "description": (
-                    "nmap 网络端口扫描工具。适合在端口、服务版本或网络暴露面会影响下一步判断时使用。\n"
+                    _rl("nmap 网络端口扫描工具。适合在端口、服务版本或网络暴露面会影响下一步判断时使用。\n"
                     "用法示例:\n"
                     "  扫描常见端口: scan_type=top_ports, target=1.2.3.4\n"
                     "  SYN扫描: scan_type=syn, target=1.2.3.4(需要管理员权限)\n"
                     "  服务版本检测: scan_type=service, target=1.2.3.4\n"
                     "  漏洞扫描: scan_type=vuln, target=1.2.3.4\n"
                     "  全量扫描: scan_type=full, target=1.2.3.4\n"
-                    "如果只需验证一个具体 HTTP/Web 行为,可以选择其他更轻量工具。"
+                    "如果只需验证一个具体 HTTP/Web 行为,可以选择其他更轻量工具。", "nmap network port-scanning tool. Use it when ports, service versions, or network exposure will affect the next decision.\nUsage examples:\n  Scan common ports: scan_type=top_ports, target=1.2.3.4\n  SYN scan: scan_type=syn, target=1.2.3.4 (requires administrator privileges)\n  Service version detection: scan_type=service, target=1.2.3.4\n  Vulnerability scan: scan_type=vuln, target=1.2.3.4\n  Full scan: scan_type=full, target=1.2.3.4\nIf you only need to verify one specific HTTP/Web behavior, choose a lighter-weight tool instead.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "target": {
                             "type": "string",
-                            "description": "目标 IP 地址或域名(必填),如 192.168.1.1 或 scanme.nmap.org",
+                            "description": _rl("目标 IP 地址或域名(必填),如 192.168.1.1 或 scanme.nmap.org", "Target IP address or domain (required), e.g. 192.168.1.1 or scanme.nmap.org"),
                         },
                         "scan_type": {
                             "type": "string",
-                            "description": "扫描类型:top_ports/syn/tcp/service/os/vuln/full",
+                            "description": _rl("扫描类型:top_ports/syn/tcp/service/os/vuln/full", "Scan type: top_ports/syn/tcp/service/os/vuln/full"),
                         },
                         "ports": {
                             "type": "string",
-                            "description": "指定端口或范围(可选),如 80,443,8080 或 1-1000",
+                            "description": _rl("指定端口或范围(可选),如 80,443,8080 或 1-1000", "Specific ports or range (optional), e.g. 80,443,8080 or 1-1000"),
                         },
                         "timing": {
                             "type": "integer",
-                            "description": "扫描速度模板 0-5(默认4),数字越大越快但越容易被检测",
+                            "description": _rl("扫描速度模板 0-5(默认4),数字越大越快但越容易被检测", "Scan timing template 0-5 (default 4); higher is faster but more easily detected"),
                         },
                         "profile": {
                             "type": "string",
-                            "description": "可选网络扫描画像:adaptive/fast/thorough/stealth。画像会联动调整端口、速度、服务探测与安全脚本。",
+                            "description": _rl("可选网络扫描画像:adaptive/fast/thorough/stealth。画像会联动调整端口、速度、服务探测与安全脚本。", "Optional network-scan profile: adaptive/fast/thorough/stealth. The profile jointly adjusts ports, timing, service probing, and safe scripts."),
                         },
                     },
                     "required": ["target"],
@@ -531,53 +533,53 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "brute_force_login",
                 "description": (
-                    "对登录表单进行密码爆破。自动管理 Session Cookie、"
+                    _rl("对登录表单进行密码爆破。自动管理 Session Cookie、"
                     "自动提取和更新 CSRF Token、判断登录成功/失败。"
-                    "单次调用内完成所有密码尝试,返回每个密码的结果。"
+                    "单次调用内完成所有密码尝试,返回每个密码的结果。", "Brute-force passwords against a login form. Automatically manages the session cookie, extracts and refreshes the CSRF token, and judges login success/failure. Completes all password attempts in a single call and returns the result for each password.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "url": {
                             "type": "string",
-                            "description": "登录页面 URL",
+                            "description": _rl("登录页面 URL", "Login page URL"),
                         },
                         "username_field": {
                             "type": "string",
-                            "description": "用户名字段名,如 'username'",
+                            "description": _rl("用户名字段名,如 'username'", "Username field name, e.g. 'username'"),
                         },
                         "password_field": {
                             "type": "string",
-                            "description": "密码字段名,如 'password'",
+                            "description": _rl("密码字段名,如 'password'", "Password field name, e.g. 'password'"),
                         },
                         "csrf_field": {
                             "type": "string",
-                            "description": "CSRF token 字段名,如 'user_token'",
+                            "description": _rl("CSRF token 字段名,如 'user_token'", "CSRF token field name, e.g. 'user_token'"),
                         },
                         "username": {
                             "type": "string",
-                            "description": "要爆破的用户名",
+                            "description": _rl("要爆破的用户名", "The username to brute-force"),
                         },
                         "passwords": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "要尝试的密码列表(最多 20 个)",
+                            "description": _rl("要尝试的密码列表(最多 20 个)", "List of passwords to try (up to 20)"),
                         },
                         "success_keyword": {
                             "type": "string",
-                            "description": "登录成功后页面出现的特征词,如 'Welcome'、'Dashboard'",
+                            "description": _rl("登录成功后页面出现的特征词,如 'Welcome'、'Dashboard'", "Keyword that appears on the page after a successful login, e.g. 'Welcome', 'Dashboard'"),
                         },
                         "failure_keyword": {
                             "type": "string",
-                            "description": "登录失败后页面出现的特征词,如 'Login failed'",
+                            "description": _rl("登录失败后页面出现的特征词,如 'Login failed'", "Keyword that appears on the page after a failed login, e.g. 'Login failed'"),
                         },
                         "submit_action": {
                             "type": "string",
-                            "description": "表单提交的目标 URL(可选,不指定则从表单 action 属性提取)",
+                            "description": _rl("表单提交的目标 URL(可选,不指定则从表单 action 属性提取)", "Form submission target URL (optional; if omitted, extracted from the form's action attribute)"),
                         },
                         "extra_data": {
                             "type": "object",
-                            "description": "额外表单字段,如 {\"Login\": \"Login\"}",
+                            "description": _rl("额外表单字段,如 {\"Login\": \"Login\"}", "Extra form fields, e.g. {\"Login\": \"Login\"}"),
                         },
                     },
                     "required": ["url", "password_field", "passwords"],
@@ -592,27 +594,27 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "space_search",
                 "description": (
-                    "空间测绘资产搜索(FOFA/Hunter/Quake/Shodan/ZoomEye/0.zone 零零信安)。"
+                    _rl("空间测绘资产搜索(FOFA/Hunter/Quake/Shodan/ZoomEye/0.zone 零零信安)。"
                     "可在需要被动发现目标资产、IP、端口、子域、标题或组件指纹时使用,不直接接触目标。"
                     "给 domain 自动按各引擎语法构造 domain 查询;也可传完整 query 语法。"
-                    "engine=all 时并发查询所有已配置 key 的引擎。"
+                    "engine=all 时并发查询所有已配置 key 的引擎。", "Cyberspace-mapping asset search (FOFA/Hunter/Quake/Shodan/ZoomEye/0.zone). Use it to passively discover target assets, IPs, ports, subdomains, titles, or component fingerprints without touching the target directly. Given a domain it builds the per-engine domain query automatically; you can also pass full query syntax. With engine=all it queries every engine that has a configured key concurrently.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "engine": {
                             "type": "string",
-                            "description": "fofa/hunter/quake/shodan/zoomeye/zerozone/all,默认 fofa",
+                            "description": _rl("fofa/hunter/quake/shodan/zoomeye/zerozone/all,默认 fofa", "fofa/hunter/quake/shodan/zoomeye/zerozone/all, default fofa"),
                         },
                         "query": {
                             "type": "string",
-                            "description": "引擎原生查询语法,如 'domain=\"x.com\"'、'app=\"Struts2\"'(可选)",
+                            "description": _rl("引擎原生查询语法,如 'domain=\"x.com\"'、'app=\"Struts2\"'(可选)", "Engine-native query syntax, e.g. 'domain=\"x.com\"', 'app=\"Struts2\"' (optional)"),
                         },
                         "domain": {
                             "type": "string",
-                            "description": "目标主域名,自动构造各引擎 domain 查询(query 未给时使用)",
+                            "description": _rl("目标主域名,自动构造各引擎 domain 查询(query 未给时使用)", "Target root domain; builds the per-engine domain query automatically (used when query is not given)"),
                         },
-                        "size": {"type": "integer", "description": "返回条数,默认 100"},
+                        "size": {"type": "integer", "description": _rl("返回条数,默认 100", "Number of results to return, default 100")},
                     },
                 },
             },
@@ -625,16 +627,16 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "subdomain_enum",
                 "description": (
-                    "子域名枚举。先用已配置的空间测绘引擎被动聚合,再用内置小字典做 DNS 解析爆破,"
-                    "返回去重后的存活子域名列表;是否需要枚举由模型根据当前任务判断。"
+                    _rl("子域名枚举。先用已配置的空间测绘引擎被动聚合,再用内置小字典做 DNS 解析爆破,"
+                    "返回去重后的存活子域名列表;是否需要枚举由模型根据当前任务判断。", "Subdomain enumeration. First aggregates passively via the configured cyberspace-mapping engines, then brute-forces DNS resolution with a small built-in wordlist, returning a deduplicated list of live subdomains; the model decides whether enumeration is needed for the current task.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "domain": {"type": "string", "description": "主域名,如 nju.edu.cn"},
+                        "domain": {"type": "string", "description": _rl("主域名,如 nju.edu.cn", "Root domain, e.g. nju.edu.cn")},
                         "brute": {
                             "type": "boolean",
-                            "description": "是否启用内置字典 DNS 爆破(默认 true)",
+                            "description": _rl("是否启用内置字典 DNS 爆破(默认 true)", "Whether to enable built-in wordlist DNS brute-forcing (default true)"),
                         },
                     },
                     "required": ["domain"],
@@ -649,26 +651,26 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "js_recon",
                 "description": (
-                    "JS 信息收集(参考 URLFinder)。抓取目标页面及其引用的全部 .js 文件,"
+                    _rl("JS 信息收集(参考 URLFinder)。抓取目标页面及其引用的全部 .js 文件,"
                     "提取 API 接口/路径、关联域名、绝对 URL,以及疑似硬编码密钥(AK/SK、token、JWT、私钥等)。"
                     "默认 auto_probe=true:自动对收集到的同源接口逐个做未授权访问探测(仅安全 GET,跳过破坏性接口)。"
-                    "适合在页面脚本可能包含端点、路径或硬编码线索时按需调用。"
+                    "适合在页面脚本可能包含端点、路径或硬编码线索时按需调用。", "JS reconnaissance (inspired by URLFinder). Fetches the target page and every .js file it references, extracting API endpoints/paths, related domains, absolute URLs, and suspected hard-coded secrets (AK/SK, tokens, JWTs, private keys, etc.). Defaults to auto_probe=true: automatically runs unauthorized-access probes against each same-origin endpoint collected (safe GET only, skipping destructive endpoints). Use it when page scripts may contain endpoints, paths, or hard-coded clues.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "url": {"type": "string", "description": "目标页面 URL"},
+                        "url": {"type": "string", "description": _rl("目标页面 URL", "Target page URL")},
                         "max_js": {
                             "type": "integer",
-                            "description": "最多抓取的 JS 文件数(默认 30)",
+                            "description": _rl("最多抓取的 JS 文件数(默认 30)", "Maximum number of JS files to fetch (default 30)"),
                         },
                         "auto_probe": {
                             "type": "boolean",
-                            "description": "是否自动对收集到的接口做未授权探测(默认 true)",
+                            "description": _rl("是否自动对收集到的接口做未授权探测(默认 true)", "Whether to automatically run unauthorized-access probes against the collected endpoints (default true)"),
                         },
                         "auth_header": {
                             "type": "string",
-                            "description": "可选鉴权头做差分对比,如 'Authorization: Bearer xxx',验证无 token 是否也能拿到数据",
+                            "description": _rl("可选鉴权头做差分对比,如 'Authorization: Bearer xxx',验证无 token 是否也能拿到数据", "Optional auth header for a differential comparison, e.g. 'Authorization: Bearer xxx', to verify whether the same data is returned without a token"),
                         },
                     },
                     "required": ["url"],
@@ -683,27 +685,27 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "unauth_test",
                 "description": (
-                    "未授权访问探测。对一批接口(通常来自 js_recon 收集的端点)逐个无凭据请求,"
+                    _rl("未授权访问探测。对一批接口(通常来自 js_recon 收集的端点)逐个无凭据请求,"
                     "按状态码/响应体/内容类型判定:⚠疑似未授权(返回数据) / ✓已鉴权拦截 / ↪跳转登录 / -不存在。"
                     "提供 auth_header 时做有/无 token 差分对比,无 token 也能拿到同样数据则判定 🔴未授权确认。"
-                    "严守读写分离:仅发安全 GET,自动跳过 delete/update/sms 等破坏性接口,不批量遍历 ID。"
+                    "严守读写分离:仅发安全 GET,自动跳过 delete/update/sms 等破坏性接口,不批量遍历 ID。", "Unauthorized-access probe. Sends credential-less requests to a batch of endpoints (usually collected by js_recon), judging each by status code / response body / content type: ⚠ likely unauthorized (returns data) / ✓ auth-blocked / ↪ redirect to login / - not found. When auth_header is provided it runs a with-/without-token differential; if the same data is returned without a token it flags 🔴 confirmed unauthorized. Strict read/write separation: only safe GET requests, automatically skipping destructive endpoints such as delete/update/sms, and never brute-iterating IDs.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "base_url": {"type": "string", "description": "目标基础 URL(确定同源范围)"},
+                        "base_url": {"type": "string", "description": _rl("目标基础 URL(确定同源范围)", "Target base URL (defines the same-origin scope)")},
                         "endpoints": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "待测接口路径/URL 列表(来自 js_recon 的接口/路径)",
+                            "description": _rl("待测接口路径/URL 列表(来自 js_recon 的接口/路径)", "List of endpoint paths/URLs to test (the endpoints/paths from js_recon)"),
                         },
                         "auth_header": {
                             "type": "string",
-                            "description": "可选鉴权头做差分,如 'Authorization: Bearer xxx' 或 'Cookie: session=...'",
+                            "description": _rl("可选鉴权头做差分,如 'Authorization: Bearer xxx' 或 'Cookie: session=...'", "Optional auth header for a differential, e.g. 'Authorization: Bearer xxx' or 'Cookie: session=...'"),
                         },
                         "max_endpoints": {
                             "type": "integer",
-                            "description": "最多探测的接口数(默认 60)",
+                            "description": _rl("最多探测的接口数(默认 60)", "Maximum number of endpoints to probe (default 60)"),
                         },
                     },
                     "required": ["base_url", "endpoints"],
@@ -718,23 +720,23 @@ def append_builtin_tool_schemas(
             "function": {
                 "name": "dir_enum",
                 "description": (
-                    "目录/文件枚举(参考 dirsearch)。并发字典爆破,自带 404 基线与全局伪装响应识别"
+                    _rl("目录/文件枚举(参考 dirsearch)。并发字典爆破,自带 404 基线与全局伪装响应识别"
                     "(随机路径返回 200 即判定伪装并停止)、状态码与响应长度过滤。"
-                    "仅做安全的 GET 探测,不碰 delete/update 等破坏性路径。"
+                    "仅做安全的 GET 探测,不碰 delete/update 等破坏性路径。", "Directory/file enumeration (inspired by dirsearch). Concurrent wordlist brute-forcing with a built-in 404 baseline and global soft-404 (masking) detection (if a random path returns 200 it declares masking and stops), plus status-code and response-length filtering. Safe GET probes only; never touches destructive paths such as delete/update.")
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "url": {"type": "string", "description": "目标基础 URL,如 https://x.com/"},
+                        "url": {"type": "string", "description": _rl("目标基础 URL,如 https://x.com/", "Target base URL, e.g. https://x.com/")},
                         "extensions": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "扩展名展开,如 ['php','jsp','bak','zip'](可选)",
+                            "description": _rl("扩展名展开,如 ['php','jsp','bak','zip'](可选)", "Extension expansion, e.g. ['php','jsp','bak','zip'] (optional)"),
                         },
                         "wordlist": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "追加的自定义路径(基于命名规律的启发式字典,可选)",
+                            "description": _rl("追加的自定义路径(基于命名规律的启发式字典,可选)", "Additional custom paths (a heuristic wordlist based on naming patterns, optional)"),
                         },
                     },
                     "required": ["url"],

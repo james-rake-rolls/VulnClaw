@@ -1918,7 +1918,7 @@ class TestAgentCoreLoop:
         )
 
         result = await llm_client.call_llm_auto(dummy, "sys", "round")
-        assert "已降级为纯文本结果摘要" in result
+        assert "已降级为纯文本结果摘要" in result or "plain-text result summary" in result
         assert "Status: 200" in result
 
     @pytest.mark.asyncio
