@@ -54,7 +54,11 @@ class TestSkillLoader:
         skill = load_core_skill("pentest-flow")
         assert skill is not None
         assert "content" in skill
-        assert "渗透" in skill["content"]
+        # Content is served in the active UI language; pin each explicitly.
+        zh = load_core_skill("pentest-flow", lang="zh")
+        assert "渗透" in zh["content"]
+        en = load_core_skill("pentest-flow", lang="en")
+        assert "Penetration Test" in en["content"]
 
     def test_load_skill_by_name_core(self):
         from vulnclaw.skills.loader import load_skill_by_name

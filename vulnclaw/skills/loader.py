@@ -157,7 +157,11 @@ def list_core_skills() -> list[str]:
     for child in _CORE_SKILLS_DIR.iterdir():
         if _is_directory_skill(child):
             names.add(child.name)
-        elif _is_flat_skill(child) and child.suffix == ".md":
+        elif (
+            _is_flat_skill(child)
+            and child.suffix == ".md"
+            and not _is_lang_variant_name(child.name)
+        ):
             names.add(child.stem)
     return sorted(names)
 
@@ -170,7 +174,11 @@ def list_specialized_skills() -> list[str]:
     for child in _SPECIALIZED_SKILLS_DIR.iterdir():
         if _is_directory_skill(child):
             names.add(child.name)
-        elif _is_flat_skill(child) and child.suffix == ".md":
+        elif (
+            _is_flat_skill(child)
+            and child.suffix == ".md"
+            and not _is_lang_variant_name(child.name)
+        ):
             names.add(child.stem)
     return sorted(names)
 
@@ -183,7 +191,11 @@ def list_custom_skills() -> list[str]:
     for child in SKILLS_DIR.iterdir():
         if _is_directory_skill(child):
             names.add(child.name)
-        elif _is_flat_skill(child) and child.suffix == ".md":
+        elif (
+            _is_flat_skill(child)
+            and child.suffix == ".md"
+            and not _is_lang_variant_name(child.name)
+        ):
             names.add(child.stem)
     return sorted(names)
 
