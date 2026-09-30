@@ -43,6 +43,7 @@ from vulnclaw.agent.network_scan import (
 from vulnclaw.agent.roles import role_tool_violation, tool_allowed_for_role
 from vulnclaw.agent.tool_result_overrides import set_raw_tool_output_override
 from vulnclaw.agent.tool_schemas import append_builtin_tool_schemas
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.config.source_render import (
     render_highlighted_source_block,
     strip_highlighted_source,
@@ -230,6 +231,18 @@ RESERVED_IP_RANGES: list[tuple[str, str, str]] = [
     ("224.0.0.0", "239.255.255.255", "RFC 5771 多播地址"),
     ("240.0.0.0", "255.255.255.255", "RFC 1112 保留地址"),
 ]
+
+# English variants of the reserved-range descriptions, resolved at read time in
+# is_reserved_ip() so the reason surfaced in scan warnings honours the UI language.
+_RESERVED_DESC_EN: dict[str, str] = {
+    "RFC 2544 基准测试地址": "RFC 2544 benchmark test address",
+    "RFC 1918 私有地址": "RFC 1918 private address",
+    "RFC 1122 环回地址": "RFC 1122 loopback address",
+    "RFC 3927 链路本地": "RFC 3927 link-local",
+    "RFC 1122 当前网络": "RFC 1122 current network",
+    "RFC 5771 多播地址": "RFC 5771 multicast address",
+    "RFC 1112 保留地址": "RFC 1112 reserved address",
+}
 
 SAFE_MODE_PATTERNS: list[str] = [
     r"open\s*\(",
@@ -1295,9 +1308,9 @@ async def execute_mcp_tool(agent: AgentContext, tool_name: str, args: dict[str, 
                 if state is not None and hasattr(state, "record_loaded_reference"):
                     state.record_loaded_reference(skill_name, ref_name)
                 return content
-            return f"[!] 参考文档未找到: {skill_name}/{ref_name}"
+            return _rl(f"[!] 参考文档未找到: {skill_name}/{ref_name}", f"[!] Reference document not found: {skill_name}/{ref_name}")
         except Exception as e:
-            return f"[!] 加载参考文档错误: {e}"
+            return _rl(f"[!] 加载参考文档错误: {e}", f"[!] Error loading reference document: {e}")
 
     if tool_name == "nmap_scan":
         return await execute_nmap(agent, args)
@@ -1316,10 +1329,10 @@ async def execute_mcp_tool(agent: AgentContext, tool_name: str, args: dict[str, 
                         kwargs[key] = int(args[key])
             result = crypto_execute(operation=operation, input_str=input_str, **kwargs)
             if result.get("success"):
-                return f"[✓] {operation} 结果:\n{result['result']}"
-            return f"[!] {operation} 失败: {result.get('error', '未知错误')}"
+                return _rl(f"[✓] {operation} 结果:\n{result['result']}", f"[✓] {operation} result:\n{result['result']}")
+            return _rl(f"[!] {operation} 失败: {result.get('error', '未知错误')}", f"[!] {operation} failed: {result.get('error', 'unknown error')}")
         except Exception as e:
-            return f"[!] 加密工具执行错误: {e}"
+            return _rl(f"[!] 加密工具执行错误: {e}", f"[!] Crypto tool execution error: {e}")
 
     if tool_name == "brute_force_login":
         return await execute_brute_force(agent, args)
@@ -1337,10 +1350,10 @@ async def execute_mcp_tool(agent: AgentContext, tool_name: str, args: dict[str, 
         try:
             return await dispatch[tool_name](agent, args)
         except Exception as e:
-            return f"[!] 工具执行错误 ({tool_name}): {e}"
+            return _rl(f"[!] 工具执行错误 ({tool_name}): {e}", f"[!] Tool execution error ({tool_name}): {e}")
 
     if not agent.mcp_manager:
-        return f"[!] MCP 管理器未初始化，无法执行工具: {tool_name}"
+        return _rl(f"[!] MCP 管理器未初始化，无法执行工具: {tool_name}", f"[!] MCP manager not initialized; cannot execute tool: {tool_name}")
 
     try:
         result = await agent.mcp_manager.call_tool(tool_name, args)
@@ -1368,10 +1381,10 @@ async def execute_mcp_tool(agent: AgentContext, tool_name: str, args: dict[str, 
 
         text = str(result)
         if text.strip() in ("undefined", "null", "None"):
-            return f"[!] 工具 {tool_name} 返回空结果 (undefined)，调用可能失败"
+            return _rl(f"[!] 工具 {tool_name} 返回空结果 (undefined)，调用可能失败", f"[!] Tool {tool_name} returned an empty result (undefined); the call may have failed")
         return text
     except Exception as e:
-        return f"[!] 工具执行错误 ({tool_name}): {e}"
+        return _rl(f"[!] 工具执行错误 ({tool_name}): {e}", f"[!] Tool execution error ({tool_name}): {e}")
 
 
 def enforce_port_constraints(agent: AgentContext, ports: list[int], *, target: str = "") -> str | None:
@@ -1583,7 +1596,7 @@ async def execute_vault_tool(agent: AgentContext, tool_name: str, args: dict[str
 async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
     target = args.get("target", "").strip()
     if not target:
-        return "[!] nmap_scan 需要 target 参数（目标 IP 或域名）"
+        return _rl("[!] nmap_scan 需要 target 参数（目标 IP 或域名）", "[!] nmap_scan requires a target parameter (target IP or domain)")
 
     host_violation = enforce_host_path_constraints(agent, host=target.lower(), target=target)
     if host_violation:
@@ -1599,10 +1612,17 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
             ip = ips[0][4][0]
             is_reserved, reason = is_reserved_ip(ip)
             if is_reserved and not target_is_private_literal(target):
-                return (
-                    f"[SKIP] 目标 {target} 解析到保留/内网地址 ({reason}, IP: {ip})\n"
-                    f"跳过 nmap 扫描。建议直接通过 Web 指纹、目录枚举等方法收集信息，"
-                    f"不要在保留地址上浪费轮次。"
+                return _rl(
+                    (
+                        f"[SKIP] 目标 {target} 解析到保留/内网地址 ({reason}, IP: {ip})\n"
+                        f"跳过 nmap 扫描。建议直接通过 Web 指纹、目录枚举等方法收集信息，"
+                        f"不要在保留地址上浪费轮次。"
+                    ),
+                    (
+                        f"[SKIP] Target {target} resolves to a reserved/internal address ({reason}, IP: {ip})\n"
+                        f"Skipping the nmap scan. Gather information directly via web fingerprinting, "
+                        f"directory enumeration and similar methods instead of wasting rounds on a reserved address."
+                    ),
                 )
     except Exception:
         pass
@@ -1623,7 +1643,7 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
         except Exception:
             pass
     if not nmap_cmd:
-        return "[!] nmap 未安装或不在 PATH 中。请确认 nmap 已安装并加入系统 PATH。"
+        return _rl("[!] nmap 未安装或不在 PATH 中。请确认 nmap 已安装并加入系统 PATH。", "[!] nmap is not installed or not on PATH. Ensure nmap is installed and added to the system PATH.")
 
     if profile:
         plan = build_nmap_plan(
@@ -1638,7 +1658,7 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
         deescalated_note = (
             ""
             if privileged or plan.args == without_privileged_nmap_args(plan.args)
-            else "[i] 非管理员权限运行：已跳过操作系统指纹识别（-O），SYN 扫描降级为 connect 扫描（-sT）。\n"
+            else _rl("[i] 非管理员权限运行：已跳过操作系统指纹识别（-O），SYN 扫描降级为 connect 扫描（-sT）。\n", "[i] Running without administrator privileges: OS fingerprinting (-O) skipped; SYN scan downgraded to connect scan (-sT).\n")
         )
     else:
         plan = None
@@ -1650,7 +1670,7 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
         elif scan_type == "syn":
             cmd.extend(["-sS" if privileged else "-sT", "-oX", "-"])
             if not privileged:
-                deescalated_note = "[i] 非管理员权限运行：使用 connect 扫描（-sT）代替 SYN 扫描（-sS）。\n"
+                deescalated_note = _rl("[i] 非管理员权限运行：使用 connect 扫描（-sT）代替 SYN 扫描（-sS）。\n", "[i] Running without administrator privileges: using connect scan (-sT) instead of SYN scan (-sS).\n")
         elif scan_type == "tcp":
             cmd.extend(["-sT", "-oX", "-"])
         elif scan_type == "service":
@@ -1661,7 +1681,7 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
             else:
                 cmd.extend(["-sV", "-oX", "-"])
                 deescalated_note = (
-                    "[i] 非管理员权限运行：操作系统指纹识别（-O）不可用，改用服务探测（-sV）。\n"
+                    _rl("[i] 非管理员权限运行：操作系统指纹识别（-O）不可用，改用服务探测（-sV）。\n", "[i] Running without administrator privileges: OS fingerprinting (-O) unavailable; falling back to service detection (-sV).\n")
                 )
         elif scan_type == "vuln":
             cmd.extend(["--script", "vuln", "-oX", "-"])
@@ -1670,9 +1690,15 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
                 cmd.extend(["-sS", "-O", "-sV", "--script", "default,safe", "-oX", "-"])
             else:
                 cmd.extend(["-sT", "-sV", "--script", "default,safe", "-oX", "-"])
-                deescalated_note = (
-                    "[i] 非管理员权限运行：已跳过操作系统指纹识别（-O），"
-                    "SYN 扫描降级为 connect 扫描（-sT）。\n"
+                deescalated_note = _rl(
+                    (
+                        "[i] 非管理员权限运行：已跳过操作系统指纹识别（-O），"
+                        "SYN 扫描降级为 connect 扫描（-sT）。\n"
+                    ),
+                    (
+                        "[i] Running without administrator privileges: OS fingerprinting (-O) "
+                        "skipped; SYN scan downgraded to connect scan (-sT).\n"
+                    ),
                 )
         else:
             cmd.extend(["-sV", "-oX", "-"])
@@ -1705,16 +1731,16 @@ async def execute_nmap(agent: AgentContext, args: dict[str, Any]) -> str:
                 fallback = subprocess.run(fallback_cmd, **kwargs)
                 if fallback.returncode == 0 or fallback.stdout:
                     result = fallback
-                    deescalated_note = "[i] 权限错误后已使用非特权 nmap 参数重试。\n"
+                    deescalated_note = _rl("[i] 权限错误后已使用非特权 nmap 参数重试。\n", "[i] Retried with unprivileged nmap arguments after a permission error.\n")
     except subprocess.TimeoutExpired:
-        return "[!] nmap 扫描超时（120秒），请减少扫描范围或使用更快的 timing"
+        return _rl("[!] nmap 扫描超时（120秒），请减少扫描范围或使用更快的 timing", "[!] nmap scan timed out (120s); reduce the scan scope or use faster timing")
     except PermissionError:
-        return "[!] nmap 执行被拒绝（权限不足）。Windows 请以管理员身份运行终端。"
+        return _rl("[!] nmap 执行被拒绝（权限不足）。Windows 请以管理员身份运行终端。", "[!] nmap execution denied (insufficient privileges). On Windows, run the terminal as administrator.")
     except Exception as e:
-        return f"[!] nmap 执行错误: {e}"
+        return _rl(f"[!] nmap 执行错误: {e}", f"[!] nmap execution error: {e}")
 
     if result.returncode != 0 and not result.stdout:
-        return f"[!] nmap 扫描失败（{result.returncode}）: {result.stderr[:500]}"
+        return _rl(f"[!] nmap 扫描失败（{result.returncode}）: {result.stderr[:500]}", f"[!] nmap scan failed ({result.returncode}): {result.stderr[:500]}")
     output = result.stdout or result.stderr
     human_summary = parse_nmap_xml(output, target)
     structured = parse_nmap_xml_structured(output, target)
@@ -1738,7 +1764,7 @@ def is_reserved_ip(ip: str) -> tuple[bool, str]:
         addr = ipaddress.ip_address(ip)
         for start, end, desc in RESERVED_IP_RANGES:
             if ipaddress.ip_address(start) <= addr <= ipaddress.ip_address(end):
-                return True, desc
+                return True, _rl(desc, _RESERVED_DESC_EN.get(desc, desc))
         return False, ""
     except Exception:
         return False, ""
@@ -1752,11 +1778,19 @@ def validate_scan_target(target: str) -> str:
         ip = ips[0][4][0]
         is_reserved, reason = is_reserved_ip(ip)
         if is_reserved:
-            return (
-                f"\n\n⚠️ **警告：目标 {target} 解析到保留/内网地址 ({reason})\n"
-                f"   IP: {ip}\n"
-                f"   扫描此地址得到的结果不代表真实系统的安全状态。\n"
-                f"   nmap 扫描结果中的端口信息可能与真实目标无关。**"
+            return _rl(
+                (
+                    f"\n\n⚠️ **警告：目标 {target} 解析到保留/内网地址 ({reason})\n"
+                    f"   IP: {ip}\n"
+                    f"   扫描此地址得到的结果不代表真实系统的安全状态。\n"
+                    f"   nmap 扫描结果中的端口信息可能与真实目标无关。**"
+                ),
+                (
+                    f"\n\n⚠️ **Warning: target {target} resolves to a reserved/internal address ({reason})\n"
+                    f"   IP: {ip}\n"
+                    f"   Results from scanning this address do not reflect the security state of the real system.\n"
+                    f"   Port information in the nmap results may be unrelated to the real target.**"
+                ),
             )
     except Exception:
         pass
@@ -1766,15 +1800,15 @@ def validate_scan_target(target: str) -> str:
 def parse_nmap_xml(xml_output: str, target: str) -> str:
     if not xml_output or "<nmaprun" not in xml_output:
         lines = xml_output.strip().splitlines()[:80]
-        return "nmap 原始输出:\n" + "\n".join(lines)
+        return _rl("nmap 原始输出:\n", "nmap raw output:\n") + "\n".join(lines)
 
     try:
         root = ET.fromstring(xml_output)
     except ET.ParseError:
         lines = xml_output.strip().splitlines()[:80]
-        return "nmap 原始输出:\n" + "\n".join(lines)
+        return _rl("nmap 原始输出:\n", "nmap raw output:\n") + "\n".join(lines)
 
-    lines = [f"nmap 扫描结果 — {target}", "=" * 60]
+    lines = [_rl(f"nmap 扫描结果 — {target}", f"nmap scan result — {target}"), "=" * 60]
     for host in root.findall(".//host"):
         hostname = host.find(".//hostname[@type='user']")
         addrs = [a.get("addr", "") for a in host.findall("address")]
@@ -1784,10 +1818,10 @@ def parse_nmap_xml(xml_output: str, target: str) -> str:
         reserved, reason = is_reserved_ip(host_ip)
         if reserved:
             host_str = (
-                f"\n[主机] {host_ip} ⚠️ **保留地址 ({reason})，测试网络结果不代表真实目标安全状态**"
+                _rl(f"\n[主机] {host_ip} ⚠️ **保留地址 ({reason})，测试网络结果不代表真实目标安全状态**", f"\n[Host] {host_ip} ⚠️ **Reserved address ({reason}); test-network results do not reflect the real target\u2019s security state**")
             )
         else:
-            host_str = f"\n[主机] {host_ip}"
+            host_str = _rl(f"\n[主机] {host_ip}", f"\n[Host] {host_ip}")
         if hostname is not None:
             host_str += f" ({hostname.get('name', '')})"
         host_str += f" — {status_val}"
@@ -1815,8 +1849,8 @@ def parse_nmap_xml(xml_output: str, target: str) -> str:
         if finished is not None:
             elapsed = finished.get("elapsed", "")
             summary = finished.get("summary", "")
-            lines.append(f"\n完成时间: {elapsed}s | {summary}")
-    return "\n".join(lines) or f"nmap 扫描完成（无输出）: {target}"
+            lines.append(_rl(f"\n完成时间: {elapsed}s | {summary}", f"\nCompleted: {elapsed}s | {summary}"))
+    return "\n".join(lines) or _rl(f"nmap 扫描完成（无输出）: {target}", f"nmap scan completed (no output): {target}")
 
 
 _HTTP_PROBE_ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
@@ -2506,10 +2540,10 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
     submit_url = submit_action or url
 
     if not url or not password_field or not passwords:
-        return "[!] 缺少必需参数: url, password_field, passwords"
+        return _rl("[!] 缺少必需参数: url, password_field, passwords", "[!] Missing required parameters: url, password_field, passwords")
 
     if not isinstance(passwords, list) or not passwords:
-        return "[!] passwords 必须是非空列表"
+        return _rl("[!] passwords 必须是非空列表", "[!] passwords must be a non-empty list")
 
     passwords = passwords[:20]
     total = len(passwords)
@@ -2517,7 +2551,7 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
     try:
         import httpx
     except ImportError:
-        return "[!] httpx 未安装，无法执行爆破"
+        return _rl("[!] httpx 未安装，无法执行爆破", "[!] httpx is not installed; cannot run brute force")
 
     def extract_csrf(html: str, field_name: str) -> str | None:
         """Extract CSRF token from HTML input field."""
@@ -2560,11 +2594,11 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
             )
             html = resp.text
         except Exception as e:
-            return f"[!] 获取登录页失败: {e}"
+            return _rl(f"[!] 获取登录页失败: {e}", f"[!] Failed to fetch the login page: {e}")
 
         csrf_token = extract_csrf(html, csrf_field)
         if csrf_token is None and csrf_field:
-            results.append(f"[!] 警告: 未在登录页找到 CSRF 字段 '{csrf_field}'")
+            results.append(_rl(f"[!] 警告: 未在登录页找到 CSRF 字段 '{csrf_field}'", f"[!] Warning: CSRF field '{csrf_field}' not found on the login page"))
 
         # Auto-detect submit button values from login page HTML.
         # Many forms (DVWA, etc.) check isset($_POST['SubmitButtonName'])
@@ -2618,13 +2652,13 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
                     reason = f"'{failure_keyword}'"
                 elif any(m in response_html.lower() for m in csrf_markers):
                     is_success = False
-                    reason = "CSRF token 错误（已自动同步新 token）"
+                    reason = _rl("CSRF token 错误（已自动同步新 token）", "CSRF token error (new token auto-synced)")
                 elif status == 302:
                     is_success = True
                     reason = "Status 302 (redirect)"
                 elif "logout" in response_html.lower() or "welcome" in response_html.lower():
                     is_success = True
-                    reason = "检测到已登录状态"
+                    reason = _rl("检测到已登录状态", "Detected logged-in state")
                 else:
                     # Include a short snippet from the response so the model
                     # can diagnose what the server actually returned.
@@ -2634,7 +2668,7 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
 
                 prefix = "[✓]" if is_success else "[✗]"
                 pw_preview = password[:40].replace("\n", "\\n")
-                results.append(f"{prefix} {pw_preview} → {'成功' if is_success else '失败'} ({reason})")
+                results.append(f"{prefix} {pw_preview} → {_rl('成功', 'Success') if is_success else _rl('失败', 'Failure')} ({reason})")
 
                 # Extract new CSRF from response for next attempt
                 new_token = extract_csrf(response_html, csrf_field)
@@ -2648,7 +2682,7 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
 
             except Exception as e:
                 pw_preview = password[:30].replace("\n", "\\n")
-                results.append(f"[!] {pw_preview} → 请求失败: {e}")
+                results.append(_rl(f"[!] {pw_preview} → 请求失败: {e}", f"[!] {pw_preview} → request failed: {e}"))
                 continue
 
         # Save cookies from the internal client for potential sharing with
@@ -2669,15 +2703,15 @@ async def execute_brute_force(agent: AgentContext, args: dict[str, Any]) -> str:
         _sync_cookies_to_shared_jar(agent, session_cookies)
 
     summary = [
-        f"[+] 爆破完成 — {url}",
-        f"    用户: {username or '(未指定)'}",
+        _rl(f"[+] 爆破完成 — {url}", f"[+] Brute force complete — {url}"),
+        _rl(f"    用户: {username or '(未指定)'}", f"    User: {username or '(unspecified)'}"),
         "",
-        "    结果:",
+        _rl("    结果:", "    Results:"),
     ]
     for r in results:
         summary.append(f"    {r}")
     summary.append("")
-    summary.append(f"    耗时: {elapsed:.1f}s")
-    summary.append(f"    尝试: {attempts}/{total}")
+    summary.append(_rl(f"    耗时: {elapsed:.1f}s", f"    Elapsed: {elapsed:.1f}s"))
+    summary.append(_rl(f"    尝试: {attempts}/{total}", f"    Attempts: {attempts}/{total}"))
 
     return "\n".join(summary)
