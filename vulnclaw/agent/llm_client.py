@@ -395,7 +395,8 @@ def _is_openai_reasoning_model(provider: str, model: str) -> bool:
 from vulnclaw.config.llm_utils import (  # noqa: E402
     build_chat_completion_kwargs as _build_chat_completion_kwargs_llm,
 )
-from vulnclaw.i18n import _, bi as _rl  # noqa: E402
+from vulnclaw.i18n import _  # noqa: E402
+from vulnclaw.i18n import bi as _rl  # noqa: E402
 
 
 def build_chat_completion_kwargs(

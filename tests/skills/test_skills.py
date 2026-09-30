@@ -498,9 +498,8 @@ class TestCryptoTools:
         assert result["result"] == "Hello?world"
 
     def test_base64_decode_rejects_invalid_input(self):
-        from vulnclaw.skills.crypto_tools import execute
-
         from vulnclaw.i18n import init_i18n
+        from vulnclaw.skills.crypto_tools import execute
 
         result = execute("base64_decode", "!!!!")
         assert result["success"] is False
@@ -576,9 +575,8 @@ class TestCryptoTools:
         assert "HS256" in result["result"]
 
     def test_unknown_operation(self):
-        from vulnclaw.skills.crypto_tools import execute
-
         from vulnclaw.i18n import init_i18n
+        from vulnclaw.skills.crypto_tools import execute
 
         result = execute("unknown_op", "test")
         assert result["success"] is False

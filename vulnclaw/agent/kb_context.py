@@ -37,7 +37,8 @@ if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
 
 
-from vulnclaw.i18n import bi as _rl, current_lang
+from vulnclaw.i18n import bi as _rl
+from vulnclaw.i18n import current_lang
 from vulnclaw.kb.retriever import KnowledgeRetriever, RetrieverStatus
 
 logger = logging.getLogger(__name__)

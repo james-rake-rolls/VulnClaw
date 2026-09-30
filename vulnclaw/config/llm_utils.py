@@ -1,9 +1,10 @@
 """LLM utility functions — shared across all layers.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: 消除 V2 残留 — build_chat_completion_kwargs 原依赖 AgentContext 协议，
-         此处重构为接受 llm_config 对象的纯函数，消除 agent/ 依赖。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: eliminate a V2 remnant — build_chat_completion_kwargs previously depended on the AgentContext
+         protocol; it was refactored into a pure function accepting an llm_config object, removing the
+         agent/ dependency.
 """
 
 from __future__ import annotations

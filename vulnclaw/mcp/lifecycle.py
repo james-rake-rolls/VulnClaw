@@ -12,7 +12,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 from vulnclaw.config.schema import MCPServerConfig, VulnClawConfig
-from vulnclaw.i18n import bi as _rl
 from vulnclaw.config.source_render import render_highlighted_source_block
 
 # Modified by: Nyaecho
@@ -20,6 +19,7 @@ from vulnclaw.config.source_render import render_highlighted_source_block
 # Reason: eliminate a V1 violation — the mcp/ infrastructure layer should not depend back on the agent/ domain layer,
 #          import pure URL helper functions from config/url_utils.py instead.
 from vulnclaw.config.url_utils import infer_port_from_url
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.mcp._probe_mixin import ProbeMixin
 from vulnclaw.mcp.registry import HealthStatus, MCPRegistry
 

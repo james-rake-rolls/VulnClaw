@@ -1,12 +1,12 @@
-"""OpenAI 工具 schema 定义 -- 内置工具的静态 schema 单一来源。
+"""OpenAI tool schema definitions -- the single source of truth for built-in tool schemas.
 
-历史: S5 重构曾把 schema 从 builtin_tools.py 抽到本模块,但当时 builtin_tools.py
-仍保留了同一份 schema 的完整副本(并在其上长出了 active_role 过滤),两份逐渐漂移,
-本模块的 build_openai_tools 也无人引用而成为死代码。
+History: the S5 refactor once pulled the schemas out of builtin_tools.py into this module, but at the
+time builtin_tools.py still kept a full copy of the same schemas (and grew active_role filtering on top),
+so the two gradually drifted, and this module's build_openai_tools became dead code with no callers.
 
-现在本模块回归其设计意图:以 append 回调的形式持有内置工具 schema 的唯一副本,由
-``builtin_tools.build_openai_tools`` 负责套用角色过滤、拼接 intel/traffic/MCP 工具。
-schema 与执行逻辑分离,且不再重复。
+Now this module returns to its design intent: it holds the single copy of the built-in tool schemas via
+an append callback, while ``builtin_tools.build_openai_tools`` applies role filtering and concatenates the
+intel/traffic/MCP tools. Schema and execution logic are separated and no longer duplicated.
 """
 
 from __future__ import annotations
@@ -19,9 +19,9 @@ from vulnclaw.i18n import bi as _rl
 def append_builtin_tool_schemas(
     append_tool: Callable[[dict[str, Any]], None],
 ) -> None:
-    """通过 ``append_tool`` 注册全部内置工具的 OpenAI function schema。
+    """Register the OpenAI function schemas for all built-in tools via ``append_tool``.
 
-    ``append_tool`` 由调用方提供,负责角色过滤与去重收集。本函数只声明静态 schema。
+    ``append_tool`` is provided by the caller and handles role filtering and dedup collection. This function only declares the static schemas.
     """
     append_tool(
         {

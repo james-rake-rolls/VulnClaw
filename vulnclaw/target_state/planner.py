@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V3 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V3 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.config.domain_models import PentestPhase
 from vulnclaw.i18n import bi as _rl
 

@@ -38,7 +38,8 @@ from vulnclaw.config.domain_models import (  # noqa: F401 — re-export
     phase_from_canonical_id,
     validate_action_constraints,
 )
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 
 logger = logging.getLogger(__name__)
 

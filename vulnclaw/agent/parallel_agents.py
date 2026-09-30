@@ -254,8 +254,8 @@ def merge_session_state(parent: SessionState, child: SessionState) -> None:
     for note in child.notes:
         if note not in parent.notes:
             parent.notes.append(note)
-    # [P18 修改] 只合并 step_records，不再合并 executed_steps
-    # executed_steps 现为 @property，从 step_records 动态生成
+    # [P18 change] Merge only step_records; no longer merge executed_steps
+    # executed_steps is now a @property generated dynamically from step_records
     for record in child.step_records:
         if record not in parent.step_records:
             parent.step_records.append(record)

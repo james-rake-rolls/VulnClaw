@@ -271,9 +271,9 @@ class ReportContentView(BaseModel):
     content: str
 
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: V6 修复 — MCP 视图模型已移至 mcp/schemas.py，此处重新导出以保持兼容。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: V6 fix — MCP view models moved to mcp/schemas.py; re-exported here for compatibility.
 from vulnclaw.mcp.schemas import MCPDiagnosticsView, MCPServiceView  # noqa: F401, E402
 
 

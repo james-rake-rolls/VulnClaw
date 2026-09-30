@@ -28,7 +28,8 @@ from vulnclaw.agent.subagent.tooling import (
     reserve_tool_call as _reserve_subagent_tool_call,
 )
 from vulnclaw.agent.tool_result_overrides import pop_raw_tool_output_override
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 
 if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
@@ -43,7 +44,7 @@ DEFAULT_TOOL_MAX_CONCURRENT = 5
 async def handle_tool_calls(agent: AgentContext, message: Any) -> str:
     """Handle tool calls from the LLM response (legacy single-turn)."""
     results: list[str] = []
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     for tool_call in (getattr(message, "tool_calls", None) or []):
         func_name = tool_call.function.name
         func_args = safe_parse_tool_args(tool_call.function.arguments)
@@ -112,7 +113,7 @@ async def handle_tool_calls_with_results(
     max_calls_per_round = 10
 
     seen: dict[str, dict[str, Any]] = {}
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     for tool_call in (getattr(message, "tool_calls", None) or []):
         func_name = tool_call.function.name
         func_args = safe_parse_tool_args(tool_call.function.arguments)
@@ -127,7 +128,7 @@ async def handle_tool_calls_with_results(
             }
 
     deduplicated = list(seen.values())
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     total_count = len(getattr(message, "tool_calls", None) or [])
     dedup_count = len(deduplicated)
 

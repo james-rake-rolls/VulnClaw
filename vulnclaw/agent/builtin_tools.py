@@ -43,17 +43,17 @@ from vulnclaw.agent.network_scan import (
 from vulnclaw.agent.roles import role_tool_violation, tool_allowed_for_role
 from vulnclaw.agent.tool_result_overrides import set_raw_tool_output_override
 from vulnclaw.agent.tool_schemas import append_builtin_tool_schemas
-from vulnclaw.i18n import bi as _rl
 from vulnclaw.config.source_render import (
     render_highlighted_source_block,
     strip_highlighted_source,
 )
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V1 违规 — infer_port_from_url 已移至 config/url_utils.py，
-#          此处重新导出以保持向后兼容。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V1 violation — infer_port_from_url moved to config/url_utils.py,
+#          re-exported here for backward compatibility.
 from vulnclaw.config.url_utils import infer_port_from_url  # noqa: F401 — re-export
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.intel.tools import (
     INTEL_TOOL_NAMES,
     dispatch_intel_tool,

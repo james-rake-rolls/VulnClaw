@@ -23,7 +23,8 @@ from vulnclaw.agent.reasoning_state import (
 from vulnclaw.agent.reflexion import FailureCategory, classify_failure
 from vulnclaw.agent.runtime_state import AgentResult, PersistentCycleResult
 from vulnclaw.config.schema import resolve_engine
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 
 RECON_MIN_ROUNDS = 8
 

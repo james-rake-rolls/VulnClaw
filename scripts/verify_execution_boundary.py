@@ -90,7 +90,7 @@ ALLOWED_SPAWN_SITES: dict[str, str] = {
     "vulnclaw/agent/builtin_tools.py:1731:subprocess.run": (
         "structured argv non-privileged nmap retry"
     ),
-    "vulnclaw/report/verifier.py:488:subprocess.run": (
+    "vulnclaw/report/verifier.py:489:subprocess.run": (
         "generated-PoC verification after synchronous ExecutionGate approval"
     ),
     "vulnclaw/cli/tui.py:499:subprocess.call": (
@@ -105,7 +105,7 @@ ALLOWED_SPAWN_SITES: dict[str, str] = {
     "vulnclaw/cli/tui.py:2666:subprocess.run": (
         "operator control plane: Unix pbpaste/wl-paste/xclip/xsel for /config paste"
     ),
-    "vulnclaw/cli/main.py:2752:subprocess.run": (
+    "vulnclaw/cli/main.py:2753:subprocess.run": (
         "operator control plane: fixed Node.js version diagnostic"
     ),
     # First-run setup wizard (merged from dev): operator-driven fixed argv

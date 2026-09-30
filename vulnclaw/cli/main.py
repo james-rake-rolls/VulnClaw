@@ -50,9 +50,9 @@ from vulnclaw.agent.input_analysis import extract_task_constraints
 from vulnclaw.cli import experience_ops
 
 # === Stream Output Renderer ===
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: S2 修复 — 共享辅助函数已移至 cli/_helpers.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: S2 fix — shared helper functions moved to cli/_helpers.py.
 from vulnclaw.cli._helpers import (
     TerminalStreamSink,
     _append_action_constraints,
@@ -77,7 +77,8 @@ from vulnclaw.config.settings import (
     set_config_value,
 )
 from vulnclaw.config.token_provider import has_llm_credentials
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.i18n.phases import localized_phase_name
 from vulnclaw.repl_runner import run_repl_call
 from vulnclaw.target_state.store import (
@@ -127,7 +128,7 @@ def _emit_solve_report_if_completed(agent: Any, config: Any) -> str:
         console.print(Text(report_text), soft_wrap=True)
     return str(report_path)
 
-# 鈹€鈹€ REPL 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── REPL ────────────────────────────────────────────────────────────
 
 
 def _prepare_repl_target(
@@ -140,7 +141,7 @@ def _prepare_repl_target(
 
     if current_target and current_target != target:
         console.print(
-            _("cli.target_switch").format(from_target = current_target,to_target = target) #数据库存在i18n字符串 未使用
+            _("cli.target_switch").format(from_target = current_target,to_target = target) # The database has i18n strings that are unused
         )
         agent.reset_context()
         current_phase = agent.session_state.phase.value
@@ -680,7 +681,7 @@ def _run_repl() -> None:
 
                 def _on_persistent_step(round_num: int, cycle_num: int, result) -> None:
                     console.print(f"[dim]-- Cycle {cycle_num} | Round {round_num} --[/]")
-                    # TerminalStreamSink 已实时流式显示，回调不重复打印
+                    # TerminalStreamSink already streams live; the callback does not print again
                     console.print()
                     nonlocal current_target, current_phase
                     if result.target:
@@ -817,7 +818,7 @@ def _run_repl() -> None:
                     console.print(_("cli.enter_auto_mode"))
                     console.print()
 
-                    # 默认走目标驱动 solve 引擎；engine=rounds 时回退到旧固定轮数循环
+                    # Default to the target-driven solve engine; engine=rounds falls back to the old fixed-round loop
                     if getattr(config.session, "engine", "solve") == "solve":
                         async def _run_auto():
                             await mcp_manager._preinit_chrome_devtools()
@@ -929,7 +930,7 @@ def _run_repl() -> None:
                                     current_target = result.target
                                 if result.phase:
                                     current_phase = result.phase
-                                # 注释掉: 流式输出已通过 TerminalStreamSink 实时显示，无需重复打印
+                                # Commented out: streaming output is already shown live via TerminalStreamSink, no need to print again
                                 # if result.output:
                                 #     _print_agent_output(result.output, config)
 
@@ -1168,7 +1169,7 @@ def _print_run_completion_summary(summary: dict[str, Any]) -> None:
     )
 
 
-# 鈹€鈹€ Sub-commands 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Sub-commands ────────────────────────────────────────────────────
 
 
 app = typer.Typer(
@@ -1189,7 +1190,7 @@ def run(
     target: str = typer.Argument(..., help="Target host/IP/URL"),
     scope: str = typer.Option("full", help="Test scope: full, web, api, mobile"),
     output: Optional[str] = typer.Option(None, help="Output report file path"),
-    # [新增] 2026-06-10 Nyaecho - TUI自然语言驱动: 允许通过 --prompt 传入自定义提示词覆盖自动生成的prompt
+    # [add] 2026-06-10 Nyaecho - TUI natural-language driving: allow --prompt to override the auto-generated prompt
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
     ),
@@ -1648,7 +1649,7 @@ def persistent(
     no_report: bool = typer.Option(
         False, "--no-report", help="Disable auto report after each cycle"
     ),
-    # [新增] 2026-06-10 Nyaecho - TUI自然语言驱动: 允许通过 --prompt 传入自定义提示词覆盖自动生成的prompt
+    # [add] 2026-06-10 Nyaecho - TUI natural-language driving: allow --prompt to override the auto-generated prompt
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
     ),
@@ -1756,7 +1757,7 @@ def persistent(
     def _on_cycle_step(round_num: int, cycle_num: int, result) -> None:
         """Real-time output for each step within a cycle."""
         console.print(f"[dim]-- Cycle {cycle_num} | Round {round_num} --[/]")
-        # TerminalStreamSink 已实时流式显示，回调不重复打印
+        # TerminalStreamSink already streams live; the callback does not print again
         console.print()
 
     def _on_cycle_complete(cycle_num: int, cycle_result: PersistentCycleResult) -> None:
@@ -1836,7 +1837,7 @@ def persistent(
 @app.command()
 def recon(
     target: str = typer.Argument(..., help="Target host/IP/URL"),
-    # [新增] 2026-06-10 Nyaecho - TUI自然语言驱动: 允许通过 --prompt 传入自定义提示词覆盖自动生成的prompt
+    # [add] 2026-06-10 Nyaecho - TUI natural-language driving: allow --prompt to override the auto-generated prompt
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
     ),
@@ -1919,7 +1920,7 @@ def recon(
                 sink = JsonlStreamSink(sys.stdout, _config.session.show_thinking)
             else:
                 sink = TerminalStreamSink(console, _config.session.show_thinking)
-            # TerminalStreamSink 已实时流式显示，不重复 console.print
+            # TerminalStreamSink already streams live; do not console.print again
             return await run_task_action(agent, task, stream_sink=sink)
 
         await _run_cli_orchestrated_task(
@@ -1942,7 +1943,7 @@ def recon(
 def scan(
     target: str = typer.Argument(..., help="Target host/IP/URL"),
     ports: Optional[str] = typer.Option(None, help="Port range, e.g. 80,443,8080"),
-    # [新增] 2026-06-10 Nyaecho - TUI自然语言驱动: 允许通过 --prompt 传入自定义提示词覆盖自动生成的prompt
+    # [add] 2026-06-10 Nyaecho - TUI natural-language driving: allow --prompt to override the auto-generated prompt
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
     ),
@@ -2028,7 +2029,7 @@ def scan(
                 sink = JsonlStreamSink(sys.stdout, _config.session.show_thinking)
             else:
                 sink = TerminalStreamSink(console, _config.session.show_thinking)
-            # TerminalStreamSink 已实时流式显示，不重复 console.print
+            # TerminalStreamSink already streams live; do not console.print again
             return await run_task_action(agent, task, stream_sink=sink)
 
         await _run_cli_orchestrated_task(
@@ -2131,7 +2132,7 @@ def network_scan(
         False, "--stream", help="Emit newline-delimited JSON events for the Rust TUI"
     ),
 ) -> None:
-    """运行基于 nmap 的网络扫描，并对薄弱环节进行跟进。"""
+    "Run an nmap-based network scan and follow up on weak points."
     normalized_profile = profile.strip().lower()
     if normalized_profile not in {"adaptive", "fast", "thorough", "stealth"}:
         err_console.print(f"[!] {_('cli.invalid_profile')}")
@@ -2287,7 +2288,7 @@ def exploit(
     target: str = typer.Argument(..., help="Target host/IP/URL"),
     cve: Optional[str] = typer.Option(None, help="Specific CVE to exploit"),
     cmd: str = typer.Option("id", help="Command to execute for verification"),
-    # [新增] 2026-06-10 Nyaecho - TUI自然语言驱动: 允许通过 --prompt 传入自定义提示词覆盖自动生成的prompt
+    # [add] 2026-06-10 Nyaecho - TUI natural-language driving: allow --prompt to override the auto-generated prompt
     prompt: Optional[str] = typer.Option(
         None, "--prompt", help="Custom natural language prompt (overrides auto-generated prompt)"
     ),
@@ -2374,7 +2375,7 @@ def exploit(
                 sink = JsonlStreamSink(sys.stdout, _config.session.show_thinking)
             else:
                 sink = TerminalStreamSink(console, _config.session.show_thinking)
-            # TerminalStreamSink 已实时流式显示，不重复 console.print
+            # TerminalStreamSink already streams live; do not console.print again
             return await run_task_action(agent, task, stream_sink=sink)
 
         await _run_cli_orchestrated_task(
@@ -2488,7 +2489,7 @@ def man_command(
     _print_cli_manual(topic, output_format)
 
 
-# 鈹€鈹€ Config sub-command group 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Config sub-command group ───────────────────────────────────────
 
 config_app = typer.Typer(help="Manage configuration")
 app.add_typer(config_app, name="config")
@@ -2598,7 +2599,7 @@ def config_provider(
         )
 
 
-# 鈹€鈹€ Init command 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Init command ────────────────────────────────────────────────────
 
 
 @app.command()
@@ -2623,7 +2624,7 @@ def init() -> None:
     console.print(_("cli.init.step_tui"))
 
 
-# 鈹€鈹€ Login / Logout commands 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Login / Logout commands ─────────────────────────────────
 
 
 @app.command()
@@ -2718,7 +2719,7 @@ def logout() -> None:
         console.print("[yellow]No stored OAuth tokens to remove.[/]")
 
 
-# 鈹€鈹€ Doctor command 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Doctor command ──────────────────────────────────────────────────
 
 
 @app.command()
@@ -2732,9 +2733,9 @@ def doctor(
     """Inspect the VulnClaw runtime environment."""
     import shutil
 
-    # 修改者: Nyaecho
-    # 修改时间: 2026-07-08
-    # 修改原因: V6 修复 — 从 mcp/diagnostics 导入，消除 CLI→Web 依赖。
+    # Modified by: Nyaecho
+    # Modified: 2026-07-08
+    # Reason: V6 fix — import from mcp/diagnostics, removing the CLI->Web dependency.
     from vulnclaw.mcp.diagnostics import get_mcp_diagnostics
 
     console.print("[bold]VulnClaw Environment Check[/]")
@@ -2863,7 +2864,7 @@ def doctor(
         )
 
 
-# 鈹€鈹€ KB command 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── KB command ──────────────────────────────────────────────────────
 
 kb_app = typer.Typer(help="Security knowledge base commands")
 app.add_typer(kb_app, name="kb")
@@ -2879,7 +2880,7 @@ app.add_typer(plugins_app, name="plugins")
 
 
 def _parse_kv_options(pairs: Optional[list[str]]) -> dict[str, object]:
-    """把 --option key=value（可重复）解析为 dict，value 优先按 JSON 解析。"""
+    "Parse --option key=value (repeatable) into a dict, parsing the value as JSON first."
     import json as _json
 
     options: dict[str, object] = {}
@@ -3323,15 +3324,15 @@ def target_state_clear_cmd(
 
 # Default command (no sub-command -> REPL)
 
-# 鈹€鈹€ Auto-pentest detection 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# ── Auto-pentest detection ──────────────────────────────────────────
 
 
 def _should_auto_pentest(user_input: str, current_target: Optional[str]) -> bool:
-    """Determine if user input should trigger autonomous pentest loop.
+    """Determine if user input should trigger the autonomous pentest loop.
 
     Triggers when:
     - User explicitly asks for a full pentest with a target
-    - User mentions a target plus action keywords like "渗透测试" or "打一下"
+    - User mentions a target plus action keywords like "penetration test" or "give it a go"
     - User asks to solve a CTF / find a flag with a target
     - User asks for information gathering / recon / OSINT with a target
     - A target is present + multi-step task indicators

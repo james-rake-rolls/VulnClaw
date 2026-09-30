@@ -5,10 +5,10 @@ They were extracted from agent/context.py to eliminate reverse dependencies
 where infrastructure layers (report/, plugins/, target_state/) imported
 directly from the domain layer (agent/).
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: 消除 V2/V3/V4 违规 — 基础设施层不应反向依赖领域层，
-         将叶子类型提取到基础设施层 config/ 包中。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: eliminate V2/V3/V4 violations — infrastructure layers should not depend back on the
+         domain layer; the leaf types were extracted into the config/ infrastructure package.
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from vulnclaw.i18n import I18nLoader, _, bi as _rl
+from vulnclaw.i18n import I18nLoader, _
+from vulnclaw.i18n import bi as _rl
 
 # Bilingual markers for a bare, unverified finding. Written in the active UI
 # language but recognised in either, so persisted findings survive a language
@@ -111,12 +112,12 @@ def phase_display_name(
 
 
 class StepStatus(str, Enum):
-    """步骤执行状态."""
+    "Step execution status."
 
-    SUCCESS = "success"  # 成功
-    FAILURE = "failure"  # 失败
-    SKIPPED = "skipped"  # 跳过
-    INFO = "info"  # 信息收集
+    SUCCESS = "success"  # Success
+    FAILURE = "failure"  # Failure
+    SKIPPED = "skipped"  # Skipped
+    INFO = "info"  # Information gathering
 
 
 # ──────────────────────────────────────────────────────────────
@@ -185,16 +186,16 @@ class VulnerabilityFinding(BaseModel):
         description="candidate/pending_verification/verified/rejected/needs_manual_review",
     )
 
-    # ★ 漏洞验证状态追踪
-    verified: bool = Field(default=False, description="是否已通过 PoC 验证")
+    # ★ Finding verification-status tracking
+    verified: bool = Field(default=False, description="Whether it has been verified by a PoC")
     verification_status: str = Field(
-        default="pending", description="验证状态: pending/verified/rejected"
+        default="pending", description="Verification status: pending/verified/rejected"
     )
-    verified_at: Optional[str] = Field(default=None, description="验证时间")
-    verification_note: str = Field(default="", description="验证备注/排除原因")
+    verified_at: Optional[str] = Field(default=None, description="Verification time")
+    verification_note: str = Field(default="", description="Verification note / rejection reason")
 
-    # ★ 漏洞唯一标识（用于去重）
-    finding_id: str = Field(default="", description="漏洞唯一标识：vuln_type + target + location")
+    # ★ Finding unique identifier (used for dedup)
+    finding_id: str = Field(default="", description="Finding unique identifier: vuln_type + target + location")
 
     def model_post_init(self, *args, **kwargs) -> None:
         # ★ Generate the dedup identity FIRST, from the caller-supplied fields —
@@ -309,7 +310,7 @@ class VulnerabilityFinding(BaseModel):
         return base_title[:50]
 
     def mark_verified(self, note: str = "", evidence_level: str = "L4") -> None:
-        """标记漏洞为已验证."""
+        "Mark the finding as verified."
         self.verified = True
         self.verification_status = "verified"
         self.lifecycle_status = "verified"
@@ -318,7 +319,7 @@ class VulnerabilityFinding(BaseModel):
         self.verification_note = note
 
     def mark_rejected(self, reason: str, evidence_level: str = "L3") -> None:
-        """标记漏洞为已拒绝（误报）."""
+        "Mark the finding as rejected (false positive)."
         self.verified = False
         self.verification_status = "rejected"
         self.lifecycle_status = "rejected"
@@ -414,18 +415,18 @@ class ConstraintViolationEvent(BaseModel):
 
 
 class StepRecord(BaseModel):
-    """单个渗透步骤的结构化记录."""
+    "Structured record of a single pentest step."
 
-    phase: PentestPhase = Field(description="所属阶段")
-    round: int = Field(default=0, description="轮次")
-    action: str = Field(default="", description="执行的动作（如端口扫描、漏洞探测）")
-    target: str = Field(default="", description="目标（IP/URL/路径等）")
-    result: str = Field(default="", description="执行结果摘要")
-    status: StepStatus = Field(default=StepStatus.INFO, description="执行状态")
-    detail: str = Field(default="", description="详细信息（可选）")
+    phase: PentestPhase = Field(description="Owning phase")
+    round: int = Field(default=0, description="Round")
+    action: str = Field(default="", description="Action performed (e.g. port scan, vulnerability probe)")
+    target: str = Field(default="", description="Target (IP/URL/path, etc.)")
+    result: str = Field(default="", description="Execution-result summary")
+    status: StepStatus = Field(default=StepStatus.INFO, description="Execution status")
+    detail: str = Field(default="", description="Detailed information (optional)")
 
     def to_summary(self) -> str:
-        """转换为可读的摘要行."""
+        "Convert to a human-readable summary line."
         status_icon = {
             StepStatus.SUCCESS: "✅",
             StepStatus.FAILURE: "❌",
@@ -437,11 +438,11 @@ class StepRecord(BaseModel):
         return f"{status_icon} Round {self.round}: {self.action} → {result}"
 
     def to_brief(self) -> str:
-        """转换为简短摘要（用于列表显示）."""
+        "Convert to a short summary (for list display)."
         return f"{self.action}: {self.result}"[:80]
 
     def to_legacy_string(self) -> str:
-        """生成向后兼容的原始字符串格式."""
+        "Produce the backward-compatible raw string format."
         status_icon = {
             StepStatus.SUCCESS: "✅",
             StepStatus.FAILURE: "❌",
@@ -452,12 +453,12 @@ class StepRecord(BaseModel):
 
     @classmethod
     def from_legacy_string(cls, step_str: str, phase: PentestPhase = PentestPhase.IDLE) -> StepRecord:
-        """从旧版字符串格式创建 StepRecord."""
-        # 提取 Round 号
+        "Create a StepRecord from the legacy string format."
+        # Extract the round number
         round_match = re.search(r"Round\s*(\d+)", step_str)
         round_num = int(round_match.group(1)) if round_match else 0
 
-        # 提取状态图标
+        # Extract the status icon
         status = StepStatus.INFO
         if "✅" in step_str:
             status = StepStatus.SUCCESS
@@ -466,14 +467,14 @@ class StepRecord(BaseModel):
         elif "⏭️" in step_str:
             status = StepStatus.SKIPPED
 
-        # 提取动作和结果
+        # Extract the action and result
         action_match = re.search(r"[✅❌⏭️ℹ️]\s*(.+?)→", step_str)
         action = action_match.group(1).strip() if action_match else ""
 
         result_match = re.search(r"→\s*(.+)$", step_str)
         result = result_match.group(1).strip() if result_match else ""
 
-        # 推断阶段
+        # Infer the phase
         inferred_phase = phase
         if "阶段切换" in step_str:
             for candidate in PentestPhase:

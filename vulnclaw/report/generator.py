@@ -19,7 +19,8 @@ from vulnclaw import __version__
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.config.settings import SESSIONS_DIR
-from vulnclaw.i18n import _, bi as _rl, current_lang
+from vulnclaw.i18n import _, current_lang
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.i18n.phases import localized_phase_name, localized_report_phase_heading
 from vulnclaw.report.filter import ReportContentFilter, deduplicate_report_findings
 from vulnclaw.report.findings_output import write_findings_artifacts

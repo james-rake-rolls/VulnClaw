@@ -17,7 +17,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 from vulnclaw.agent.agent_state import AgentState, clip_text, extract_flags, one_line
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 
 _HTTP_PROBE_SECTION_RE = re.compile(
     r"^\[(?P<index>\d+)\]\s+(?P<method>[A-Z]+)\s+(?P<label>.*?)\s+"

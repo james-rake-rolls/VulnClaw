@@ -48,7 +48,8 @@ from vulnclaw.agent.system_prompt import build_dynamic_system_prompt
 from vulnclaw.agent.tool_call_manager import safe_parse_tool_args
 from vulnclaw.config.schema import VulnClawConfig, resolve_engine
 from vulnclaw.config.settings import make_openai_client
-from vulnclaw.i18n import _, bi as _rl
+from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.kb.experience import ExperienceStore
 from vulnclaw.target_state.store import save_target_state
 

@@ -1,9 +1,9 @@
 """VulnClaw Think Tag Filter — strip <think>/<thinking> blocks from LLM output.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: V2 修复 — 纯文本工具函数已移至 config/text_utils.py，
-         此处重新导出以保持 agent/ 层向后兼容。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: V2 fix — the pure text helper functions moved to config/text_utils.py; re-exported here for
+         agent/-layer backward compatibility.
 """
 
 from __future__ import annotations
