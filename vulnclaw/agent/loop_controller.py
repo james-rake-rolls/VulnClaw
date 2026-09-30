@@ -23,7 +23,7 @@ from vulnclaw.agent.reasoning_state import (
 from vulnclaw.agent.reflexion import FailureCategory, classify_failure
 from vulnclaw.agent.runtime_state import AgentResult, PersistentCycleResult
 from vulnclaw.config.schema import resolve_engine
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 
 RECON_MIN_ROUNDS = 8
 
@@ -65,7 +65,7 @@ def _sync_reasoning_constraint(agent: AgentContext, path_name: str, category: Fa
     if category_value is None:
         return
     reasoning.add_constraint(
-        description=f"{path_name or '当前路径'} 被 {category_value.value} 阻断",
+        description=_rl(f"{path_name or '当前路径'} 被 {category_value.value} 阻断", f"{path_name or 'current path'} blocked by {category_value.value}"),
         category=category_value,
         severity=ConstraintSeverity.HIGH,
         source="auto_pentest",

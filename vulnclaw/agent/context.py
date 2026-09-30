@@ -38,7 +38,7 @@ from vulnclaw.config.domain_models import (  # noqa: F401 — re-export
     phase_from_canonical_id,
     validate_action_constraints,
 )
-from vulnclaw.i18n import _
+from vulnclaw.i18n import _, bi as _rl
 
 logger = logging.getLogger(__name__)
 
@@ -691,7 +691,7 @@ class SessionState(BaseModel):
 
         # 第一层：finding_id 精确去重
         if finding.finding_id in self._finding_ids_cache:
-            logger.debug("跳过重复漏洞: %s (ID: %s)", finding.title, finding.finding_id)
+            logger.debug(_rl("跳过重复漏洞: %s (ID: %s)", "Skipping duplicate finding: %s (ID: %s)"), finding.title, finding.finding_id)
             return False
 
         # 第二层：语义相似度去重
@@ -705,7 +705,7 @@ class SessionState(BaseModel):
                 # 命中语义重复：保留证据更强者
                 if _evidence_strength(finding) > _evidence_strength(existing):
                     logger.debug(
-                        "语义重复，替换为证据更强的漏洞: %s 取代 %s",
+                        _rl("语义重复，替换为证据更强的漏洞: %s 取代 %s", "Semantic duplicate; replaced by a stronger-evidence finding: %s supersedes %s"),
                         finding.title,
                         existing.title,
                     )
@@ -714,7 +714,7 @@ class SessionState(BaseModel):
                     self.findings[idx] = finding
                     self._notify_checkpoint("finding_updated")
                 else:
-                    logger.debug("跳过语义重复漏洞: %s", finding.title)
+                    logger.debug(_rl("跳过语义重复漏洞: %s", "Skipping semantically duplicate finding: %s"), finding.title)
                 return False
 
         # 附加 skill 溯源（若未显式提供且当前有活跃选择）。深拷贝以免其中的

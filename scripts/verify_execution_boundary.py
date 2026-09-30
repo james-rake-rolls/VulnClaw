@@ -105,7 +105,7 @@ ALLOWED_SPAWN_SITES: dict[str, str] = {
     "vulnclaw/cli/tui.py:2666:subprocess.run": (
         "operator control plane: Unix pbpaste/wl-paste/xclip/xsel for /config paste"
     ),
-    "vulnclaw/cli/main.py:2737:subprocess.run": (
+    "vulnclaw/cli/main.py:2752:subprocess.run": (
         "operator control plane: fixed Node.js version diagnostic"
     ),
     # First-run setup wizard (merged from dev): operator-driven fixed argv
