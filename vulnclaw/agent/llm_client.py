@@ -364,7 +364,7 @@ def _is_key_exhausted_error(error_text: str) -> bool:
 
     These are rate-limit / quota / balance exhaustion signals where switching to
     a different key is the right recovery. Covers OpenAI-style 429/quota plus
-    deepseek (402 insufficient balance) and zhipu (codes 1302/1113, 余额) errors.
+    deepseek (402 insufficient balance) and zhipu (codes 1302/1113, balance) errors.
     """
     exhausted_markers = [
         "rate limit",
@@ -389,13 +389,14 @@ def _is_openai_reasoning_model(provider: str, model: str) -> bool:
     return normalized.startswith(("o1", "o3", "o4", "gpt-5"))
 
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: V2 修复 — 核心逻辑已移至 config/llm_utils.py，此处提供向后兼容包装。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: V2 fix — core logic moved to config/llm_utils.py; this provides a backward-compatible wrapper.
 from vulnclaw.config.llm_utils import (  # noqa: E402
     build_chat_completion_kwargs as _build_chat_completion_kwargs_llm,
 )
 from vulnclaw.i18n import _  # noqa: E402
+from vulnclaw.i18n import bi as _rl  # noqa: E402
 
 
 def build_chat_completion_kwargs(
@@ -452,7 +453,7 @@ async def _call_with_persistent_retries_unbudgeted(
 
             retry_attempts += 1
             logger.warning(
-                "%s LLM API 异常响应，第 %d 次重连尝试中... (5s 后重试)",
+                _rl("%s LLM API 异常响应，第 %d 次重连尝试中... (5s 后重试)", "%s abnormal LLM API response; reconnect attempt %d... (retrying in 5s)"),
                 stage_label, retry_attempts,
             )
             await asyncio.sleep(5)
@@ -473,7 +474,7 @@ async def _call_with_persistent_retries_unbudgeted(
                     agent.rotate_api_key()
                     retry_attempts += 1
                     logger.warning(
-                        "%s 当前密钥失败 (%s)，切换到下一个 API 密钥并重试...",
+                        _rl("%s 当前密钥失败 (%s)，切换到下一个 API 密钥并重试...", "%s current key failed (%s); switching to the next API key and retrying..."),
                         stage_label, exc,
                     )
                     continue
@@ -487,7 +488,7 @@ async def _call_with_persistent_retries_unbudgeted(
                 agent.rotate_api_key()
                 retry_attempts += 1
                 logger.warning(
-                    "%s 所有 API 密钥均已限流，第 %d 次重连尝试中... (5s 后重试)",
+                    _rl("%s 所有 API 密钥均已限流，第 %d 次重连尝试中... (5s 后重试)", "%s all API keys are rate-limited; reconnect attempt %d... (retrying in 5s)"),
                     stage_label, retry_attempts,
                 )
                 await asyncio.sleep(5)
@@ -498,7 +499,7 @@ async def _call_with_persistent_retries_unbudgeted(
 
             retry_attempts += 1
             logger.warning(
-                "%s LLM 连接异常，第 %d 次重连尝试中... (%s)",
+                _rl("%s LLM 连接异常，第 %d 次重连尝试中... (%s)", "%s LLM connection error; reconnect attempt %d... (%s)"),
                 stage_label, retry_attempts, exc,
             )
             await asyncio.sleep(5)
@@ -539,10 +540,10 @@ def _format_tool_results_fallback(
     """Build deterministic tool-result text from the model-facing observations."""
 
     parts = [
-        "[tool results processed] 工具调用已执行；未进行额外 LLM 总结；已降级为纯文本结果摘要。"
+        _rl("[tool results processed] 工具调用已执行；未进行额外 LLM 总结；已降级为纯文本结果摘要。", "[tool results processed] Tool calls executed; no additional LLM summary; degraded to a plain-text result summary.")
     ]
     if assistant_text.strip():
-        parts.append(f"模型行动理由: {assistant_text.strip()[:600]}")
+        parts.append(_rl(f"模型行动理由: {assistant_text.strip()[:600]}", f"Model action rationale: {assistant_text.strip()[:600]}"))
     for item in tool_results:
         if not isinstance(item, dict):
             parts.append(str(item))
@@ -554,15 +555,15 @@ def _format_tool_results_fallback(
         tool_call = item.get("tool_call")
         tool_name = getattr(getattr(tool_call, "function", None), "name", "")
         if tool_name:
-            prefix = f"工具 {tool_name}"
+            prefix = _rl(f"工具 {tool_name}", f"Tool {tool_name}")
             if isinstance(duration_ms, int):
                 prefix += f" ({duration_ms}ms)"
             prefix += ": "
         parts.append(prefix + content)
         if correction:
-            parts.append(f"纠偏信号: {correction}")
+            parts.append(_rl(f"纠偏信号: {correction}", f"Correction signal: {correction}"))
     if skipped_info:
-        parts.append("本轮提示: " + "; ".join(skipped_info))
+        parts.append(_rl("本轮提示: ", "This round's notes: ") + "; ".join(skipped_info))
     return "\n".join(parts)
 
 
@@ -707,10 +708,10 @@ async def call_llm_auto(
 
 
 class _AsyncIterWrapper:
-    """Wrap sync iterable as async iterable for unified async for usage.
+    """Wrap a sync iterable as an async iterable for unified `async for` usage.
 
-    OpenAI sync client → sync Stream（需包装后 async for）
-    测试 mock / async client → async Stream（直接用 async for）
+    OpenAI sync client -> sync Stream (needs wrapping before `async for`)
+    test mock / async client -> async Stream (usable directly with `async for`)
     """
 
     def __init__(self, iterable):
@@ -727,25 +728,25 @@ class _AsyncIterWrapper:
 
 
 def _ensure_async_iter(response):
-    """返回 async 可迭代对象，兼容 sync 和 async Stream。
+    """Return an async iterable compatible with both sync and async Streams.
 
-    检查顺序：async 可迭代 → sync 可迭代 → 不可迭代返回 None（触发降级）。
+    Check order: async iterable -> sync iterable -> not iterable returns None (triggers fallback).
     """
     if hasattr(response, "__aiter__"):
         return response
     if hasattr(response, "__iter__"):
         return _AsyncIterWrapper(response)
-    return None  # 不是可迭代对象，由调用方走降级路径
+    return None  # Not iterable; the caller takes the fallback path
 
 
 def _collect_tool_call_deltas(delta: Any, tool_calls_chunks: list[dict]) -> None:
-    """从单个流式 delta 中提取 tool_call 分片，追加到累积列表。
+    """Extract tool_call fragments from a single streaming delta and append to the accumulator list.
 
-    处理各 provider 的差异：
-    - 某些 provider 第一个分片只带 id（function 字段为 None）
-    - 某些 provider name 与 arguments 分别在不同分片到达
-    - index 缺失/为 None（回退到 0）
-    - tc_delta 本身为 None
+    Handles provider differences:
+    - some providers send only an id in the first fragment (function field is None)
+    - some providers deliver name and arguments in separate fragments
+    - index missing / None (falls back to 0)
+    - tc_delta itself is None
     """
     tc = getattr(delta, "tool_calls", None)
     if not tc:
@@ -753,7 +754,7 @@ def _collect_tool_call_deltas(delta: Any, tool_calls_chunks: list[dict]) -> None
     for tc_delta in tc:
         if tc_delta is None:
             continue
-        # function 字段在仅含 id 的首个分片中可能为 None
+        # The function field may be None in the first chunk that carries only an id
         func = getattr(tc_delta, "function", None)
         if func is not None:
             name = getattr(func, "name", None) or ""
@@ -772,12 +773,12 @@ def _collect_tool_call_deltas(delta: Any, tool_calls_chunks: list[dict]) -> None
 
 
 def _validate_tool_call(tool_call: Any) -> bool:
-    """验证聚合后的 tool_call 是否完整可用。
+    """Validate whether an aggregated tool_call is complete and usable.
 
-    要求：
-    - id 非空（某些 provider 仅在首个分片给出，分片丢失会导致空 id）
-    - function.name 非空
-    - arguments 为合法 JSON 或空字符串（流式中断会产生截断的不完整 JSON）
+    Requirements:
+    - id is non-empty (some providers give it only in the first fragment; a lost fragment yields an empty id)
+    - function.name is non-empty
+    - arguments is valid JSON or an empty string (a streaming interruption produces truncated, incomplete JSON)
     """
     tc_id = getattr(tool_call, "id", None)
     if not tc_id:
@@ -796,11 +797,11 @@ def _validate_tool_call(tool_call: Any) -> bool:
 
 
 def _build_tool_call(tc_id: str, name: str, arguments: str) -> Any:
-    """构造一个 tool_call 对象。
+    """Construct a tool_call object.
 
-    优先使用 OpenAI 官方 pydantic 类型（生产路径）；导入失败时回退到等价
-    轻量对象（仅暴露下游用到的 .id/.type/.function.name/.function.arguments），
-    保证组装逻辑可在不安装 openai 的环境中独立测试。
+    Prefers OpenAI's official pydantic types (the production path); on import failure it falls back to an
+    equivalent lightweight object (exposing only the downstream-used .id/.type/.function.name/.function.arguments),
+    so the assembly logic can be tested independently in an environment without openai installed.
     """
     try:
         from openai.types.chat.chat_completion_message_tool_call import (
@@ -819,15 +820,15 @@ def _build_tool_call(tc_id: str, name: str, arguments: str) -> Any:
 
 
 def _assemble_tool_calls(tool_calls_chunks: list[dict]) -> list[Any]:
-    """将累积的流式分片按 index 聚合为完整 tool_call 列表。
+    """Aggregate the accumulated streaming fragments by index into a complete tool_call list.
 
-    跨多个 chunk 分片到达的 id/name/arguments 按 index 对齐拼接。
-    聚合后逐个校验，丢弃缺失 id、缺失 name 或 arguments JSON 不完整的调用并记录警告。
+    id/name/arguments arriving across multiple chunks are aligned and concatenated by index.
+    After aggregation each is validated; calls missing an id, missing a name, or with incomplete arguments JSON are dropped with a warning.
     """
     if not tool_calls_chunks:
         return []
 
-    # 按 index 对齐拼接（dict 保持首次出现顺序）
+    # Align and concatenate by index (dict preserves first-seen order)
     tc_by_index: dict[int, dict] = {}
     for tc_chunk in tool_calls_chunks:
         idx = tc_chunk["index"]
@@ -846,7 +847,7 @@ def _assemble_tool_calls(tool_calls_chunks: list[dict]) -> list[Any]:
         )
         if not _validate_tool_call(candidate):
             logger.warning(
-                "丢弃不完整的流式 tool_call: id=%r name=%r args=%r",
+                _rl("丢弃不完整的流式 tool_call: id=%r name=%r args=%r", "Discarding incomplete streaming tool_call: id=%r name=%r args=%r"),
                 tc_data["id"],
                 tc_data["function"]["name"],
                 tc_data["function"]["arguments"][:80],
@@ -890,7 +891,7 @@ async def call_llm_stream(
         reasoning_buffer = ""
         tool_calls_chunks: list[dict] = []
 
-        # 自动适配 sync/async Stream（sync Stream 用 _AsyncIterWrapper 包装）
+        # Auto-adapt sync/async Stream (a sync Stream is wrapped by _AsyncIterWrapper)
         _stream = _ensure_async_iter(response)
         if _stream is None:
             raise ValueError("LLM response is not a valid stream object")
@@ -913,7 +914,7 @@ async def call_llm_stream(
                     stream_sink.on_content_token(content)
                     full_text += content
 
-                # Handle tool_calls（流式 chat 模式也需要处理）
+                # Handle tool_calls (streaming chat mode needs this too)
                 _collect_tool_call_deltas(delta, tool_calls_chunks)
 
         if reasoning_buffer:
@@ -921,7 +922,7 @@ async def call_llm_stream(
 
         stream_sink.on_stream_end()
 
-        # 如果有 tool_calls，路由到 handle_tool_calls（同 call_llm_auto_stream 的逻辑）
+        # If there are tool_calls, route to handle_tool_calls (same logic as call_llm_auto_stream)
         if tool_calls_chunks:
             tool_calls = _assemble_tool_calls(tool_calls_chunks)
 
@@ -932,7 +933,7 @@ async def call_llm_stream(
                 })()
                 for tc in tool_calls:
                     stream_sink.on_tool_call(tc.function.name, tc.function.arguments[:200])
-                # handle_tool_calls 执行工具并做第二轮 LLM 调用
+                # handle_tool_calls executes the tools and makes a second LLM call
                 result = await handle_tool_calls(agent, dummy_msg)
                 if result:
                     stream_sink.on_content_token(result)
@@ -962,10 +963,10 @@ async def call_llm_stream(
     response_fallback, _ = await _call_with_persistent_retries(
         agent,
         lambda: agent._get_client().chat.completions.create(**kwargs),
-        "单轮",
+        "single turn",
     )
 
-    # 降级到非流式 call_llm（有 retry + tool_calls 处理），行为一致
+    # Fall back to non-streaming call_llm (with retry + tool_calls handling); behavior is consistent
     return await call_llm(agent, system_prompt)
 
 
@@ -1080,39 +1081,39 @@ async def call_llm_auto_stream(
 
 @runtime_checkable
 class StreamSink(Protocol):
-    """输出流接收器抽象。
+    """Output-stream sink abstraction.
 
-    LLM 调用层通过此接口将输出定向到不同目标（CLI/Web/静默）。
-    放在 llm_client.py 中符合 CONTRIBUTING.md 的模块放置原则。
+    The LLM-call layer uses this interface to direct output to different targets (CLI/Web/silent).
+    Placing it in llm_client.py follows CONTRIBUTING.md's module-placement principle.
     """
 
     def on_status(self, message: str) -> None:
-        """显示状态提示（如 "Thinking..."）。"""
+        "Show a status hint (e.g. \"Thinking...\")."
         ...
 
     def on_thinking_token(self, token: str) -> None:
-        """接收思考过程的 token（可选择是否显示）。"""
+        "Receive thinking-process tokens (may or may not be displayed)."
         ...
 
     def on_content_token(self, token: str) -> None:
-        """接收正文 token。"""
+        "Receive body tokens."
         ...
 
     def on_tool_call(self, tool_name: str, args: str) -> None:
-        """显示工具调用提示。"""
+        "Show a tool-call hint."
         ...
 
     def on_tool_result(self, result_summary: str) -> None:
-        """显示工具结果摘要。"""
+        "Show a tool-result summary."
         ...
 
     def on_stream_end(self) -> None:
-        """流式结束回调（换行/清理）。"""
+        "Streaming-finished callback (newline/cleanup)."
         ...
 
 
 class _NullSink:
-    """空实现，确保无 sink 时不产生任何输出。"""
+    "No-op implementation, ensuring no output is produced when there is no sink."
 
     def on_status(self, message: str) -> None:
         pass

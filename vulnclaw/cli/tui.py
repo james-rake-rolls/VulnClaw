@@ -1,13 +1,13 @@
 """TUI helpers for the VulnClaw CLI."""
 
-# [修改] 重大重构: 从 Rich 数字菜单驱动改为 prompt_toolkit + slash 命令系统
-# - 新增 opencode 风格色彩调色板 (C_PRIMARY / C_SECONDARY 等)
-# - 新增 slash 命令系统 (/target /mode /scope /start /config 等)
-# - 新增 prompt 状态机 (input / choice / confirm / chain)
-# - 新增 _run_pt_tui 函数提供 prompt_toolkit 应用主循环
-# - 旧 Rich Prompt 保留在 _prompt_* 函数中作为兼容
-# - [2026-08-07] Textual TUI (tui_textual.py) 已退役: run_tui() 改为启动 Rust ratatui 工作台
-#   (tui/, vulnclaw-tui-native), --once 保留文本 dashboard 用于 smoke test
+# [change] Major refactor: from a Rich numeric-menu driver to a prompt_toolkit + slash-command system
+# - Added an opencode-style color palette (C_PRIMARY / C_SECONDARY, etc.)
+# - Added a slash-command system (/target /mode /scope /start /config, etc.)
+# - Added a prompt state machine (input / choice / confirm / chain)
+# - Added _run_pt_tui to provide the prompt_toolkit application main loop
+# - The old Rich Prompt is kept in the _prompt_* functions for compatibility
+# - [2026-08-07] The Textual TUI (tui_textual.py) is retired: run_tui() now launches the Rust ratatui workbench
+#   (tui/, vulnclaw-tui-native); --once keeps the text dashboard for smoke tests
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
-# [修改] 2026-06-10 Nyaecho - 将 prompt_toolkit 导入移到 _run_pt_tui() 函数内部，避免硬性依赖
+# [change] 2026-06-10 Nyaecho - moved the prompt_toolkit import inside _run_pt_tui() to avoid a hard dependency
 from rich import box
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -69,7 +69,7 @@ from vulnclaw.target_state.store import get_target_state_preview, list_target_sn
 logger = logging.getLogger(__name__)
 
 # ── opencode-inspired colour palette ──
-# [修改] 替换 Rich 默认配色为统一色彩变量, 便于后续主题切换
+# [change] Replace Rich's default colors with unified color variables to ease later theme switching
 C_PRIMARY = "#fab283"         # warm peach  – key indicators, selections
 C_SECONDARY = "#5c9cf5"       # soft blue   – info, mode labels
 C_ACCENT = "#9d7cd8"          # purple      – titles, headings
@@ -82,8 +82,8 @@ C_BORDER = "#484848"          # mid-gray    – panel borders
 C_BORDER_SUBTLE = "#3c3c3c"   # dark-gray   – inner / subtle borders
 
 # ── @ skill reference boundary detection ──
-# [新增] 2026-07-08 Nyaecho - 新增 @ 符号用于 skill 资料引用，支持任意位置触发补全
-# 边界字符：空白、中英文标点、行尾、特殊符号
+# [add] 2026-07-08 Nyaecho - added the @ symbol for skill-reference completion, triggerable at any position
+# Boundary characters: whitespace, CJK/Latin punctuation, line end, special symbols
 SKILL_BOUNDARY_RE = re.compile(r'[\s，。；：、！？）】》,.:;!?)]}@/]')
 
 
@@ -102,12 +102,12 @@ def find_at_context(text: str, cursor: int) -> tuple[str, str] | None:
     at_pos = before.rfind("@")
     if at_pos == -1:
         return None
-    # @ 前面必须是边界字符或行首
+    # The @ must be preceded by a boundary character or the start of the line
     if at_pos > 0 and not _is_skill_boundary(before[at_pos - 1]):
         return None
-    # 提取 @ 后面的 word（到光标位置）
+    # Extract the word after @ (up to the cursor)
     word = before[at_pos + 1:]
-    # word 中不能有边界字符（说明 skill name 已输入完毕，光标在后面）
+    # The word must contain no boundary character (i.e. the skill name is fully typed and the cursor is after it)
     if SKILL_BOUNDARY_RE.search(word):
         return None
     return (before[:at_pos], word)
@@ -126,13 +126,13 @@ def expand_at_skills(text: str) -> str:
     i = 0
     while i < len(text):
         if text[i] == "@":
-            # @ 前面必须是边界字符或行首
+            # The @ must be preceded by a boundary character or the start of the line
             if i > 0 and not _is_skill_boundary(text[i - 1]):
                 result.append(text[i])
                 i += 1
                 continue
 
-            # 提取 skill name
+            # Extract the skill name
             name_start = i + 1
             name_end = name_start
             while name_end < len(text) and not _is_skill_boundary(text[name_end]):
@@ -420,14 +420,14 @@ def build_dashboard(config, state: TuiState) -> Group:
         overview_table.add_row(_("tui.history_error"), overview.error)
 
     command_preview = _draft_from_state(state).command_line
-    # [修改] 这里改用 Rich Text 逐段上色，避免把 markup 当普通字符串显示出来
+    # [change] Use Rich Text to color segment by segment here, avoiding markup being shown as a plain string
     footer_body = Text()
     footer_body.append(_("tui.command_preview"), style=f"bold {C_TEXT}")
     footer_body.append("\n")
     footer_body.append("┃  ", style=C_MUTED)
     footer_body.append(command_preview, style=C_MUTED)
     footer_body.append("\n\n")
-    # [隐藏] 隐藏一个调试时文字提示
+    # [hidden] Hide a debug-time text hint
     #footer_body.append(_("tui.cli_note"), style=C_MUTED)
 
     footer = Panel(
@@ -522,7 +522,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
 
     Returns 'quit', 'launch', or None (interrupted).
     """
-    # [修改] 2026-06-10 Nyaecho - 将 prompt_toolkit 导入移到函数内部，避免硬性依赖
+    # [change] 2026-06-10 Nyaecho - moved the prompt_toolkit import inside the function to avoid a hard dependency
     from prompt_toolkit import Application
     from prompt_toolkit.buffer import Buffer
     from prompt_toolkit.formatted_text import ANSI
@@ -563,7 +563,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
 
         return []
 
-    # [修改] 2026-07-08 Nyaecho - 修改原因：提交时展开 @ skill 引用为完整 prompt
+    # [change] 2026-07-08 Nyaecho - reason: expand @ skill references into the full prompt on submit
     def _handle_input(buff: Buffer) -> bool:
         text = buff.text.strip()
         buff.text = ""
@@ -578,10 +578,10 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
             if action in ("quit", "launch"):
                 app.exit()
         elif text:
-            # 展开 @ skill 引用后作为自然语言 prompt
+            # After expanding @ skill references, use it as the natural-language prompt
             expanded = expand_at_skills(text)
             session["_nl_text"] = expanded
-            session["_nl_history"] = text  # 保留原始输入用于 /continue
+            session["_nl_history"] = text  # Keep the original input for /continue
             session["_action"] = "launch"
             app.exit()
         return False
@@ -592,7 +592,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
         console.print(build_dashboard(session["config"], session["state"]))
         return ANSI(buf.getvalue().rstrip("\n"))
 
-    # [修改] 2026-07-08 Nyaecho - 修改原因：合并 slash 和 at 两个补全器
+    # [change] 2026-07-08 Nyaecho - reason: merge the slash and at completers
     from prompt_toolkit.completion import merge_completers
 
     input_buffer = Buffer(
@@ -605,7 +605,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
 
     session["_palette_idx"] = 0
 
-    # [修改] 2026-07-08 Nyaecho - 修改原因：新增 "at" kind 支持任意位置的 @ skill 引用补全
+    # [change] 2026-07-08 Nyaecho - reason: add an "at" kind supporting @ skill-reference completion at any position
     def _palette_context() -> tuple[str, str] | None:
         text = input_buffer.text
         cursor = input_buffer.cursor_position
@@ -619,7 +619,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
             if " " in word:
                 return None
             return "slash", word
-        # 检测任意位置的 @
+        # Detect @ at any position
         ctx = find_at_context(text, cursor)
         if ctx is not None:
             _, word = ctx
@@ -629,7 +629,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
     def _palette_visible() -> bool:
         return _palette_context() is not None
 
-    # [修改] 2026-07-08 Nyaecho - 修改原因：at kind 调用 build_at_palette_entries获取 skills
+    # [change] 2026-07-08 Nyaecho - reason: the at kind calls build_at_palette_entries to get skills
     def _palette_filtered() -> list[tuple[str, str]]:
         context = _palette_context()
         if context is None:
@@ -641,7 +641,7 @@ def _run_pt_tui(session: dict[str, Any]) -> Optional[str]:
             return build_at_palette_entries(word)
         return build_slash_palette_entries(word)
 
-    # [修改] 2026-07-08 Nyaecho - 修改原因：at kind 返回 "@" 前缀
+    # [change] 2026-07-08 Nyaecho - reason: the at kind returns the "@" prefix
     def _palette_prefix() -> str:
         context = _palette_context()
         if context and context[0] == "flag":
@@ -771,8 +771,8 @@ def _load_default_bindings() -> Any:
 
 
 # ── Prompt state machine ──
-# [修改] 新增 prompt 状态机, 支持 input / choice / confirm / chain 四种交互模式
-# 用于替换 Rich 的 Prompt.ask / Confirm.ask, 与 prompt_toolkit 深度集成
+# [change] Added a prompt state machine supporting four interaction modes: input / choice / confirm / chain
+# Replaces Rich's Prompt.ask / Confirm.ask, deeply integrated with prompt_toolkit
 
 PromptCallback = Callable[[str], None]
 
@@ -857,9 +857,9 @@ def _handle_prompt_response(session: dict[str, Any], prompt: tuple, text: str) -
 
 
 # ── Slash command system ──
-# [修改] 新增 slash 命令系统替代数字菜单, 支持补全、快捷键注册
-# 命令映射关系: /target→原1, /mode→原2, /scope→原3, /start→原4...
-# /history→原5, /report→原6, /diag→原7, /config→原8, /quit→原q
+# [change] Added a slash-command system to replace the numeric menu, with completion and shortcut registration
+# Command mapping: /target->old 1, /mode->old 2, /scope->old 3, /start->old 4...
+# /history->old 5, /report->old 6, /diag->old 7, /config->old 8, /quit->old q
 
 def _build_slash_commands() -> dict[str, str]:
     """Build SLASH_COMMANDS dict with translated descriptions."""
@@ -868,7 +868,7 @@ def _build_slash_commands() -> dict[str, str]:
         "mode": _("tui.slash_mode"),
         "scope": _("tui.slash_scope"),
         "run": _("tui.slash_run"),
-        # [新增] 2026-06-10 Nyaecho - TUI命令面板新增 /continue 斜杠命令入口
+        # [add] 2026-06-10 Nyaecho - added a /continue slash command to the TUI command palette
         "continue": _("tui.slash_continue"),
         "history": _("tui.slash_history"),
         "report": _("tui.slash_report"),
@@ -959,7 +959,7 @@ def list_skill_palette_entries(prefix: str = "") -> list[tuple[str, str]]:
 def build_at_palette_entries(prefix: str = "") -> list[tuple[str, str]]:
     """Return palette entries for @ skill references.
 
-    [新增] 2026-07-08 Nyaecho - @ 符号用于 skill 资料引用，补全时只显示 skills。
+    [add] 2026-07-08 Nyaecho - the @ symbol is for skill references; completion shows skills only.
     """
     return list_skill_palette_entries(prefix)
 
@@ -980,7 +980,7 @@ def list_repl_palette_entries(prefix: str = "") -> list[tuple[str, str]]:
     return entries
 
 
-# [修改] 2026-07-08 Nyaecho - 修改原因：斜杠命令只保留内置命令，skills 改用 @ 引用
+# [change] 2026-07-08 Nyaecho - reason: slash commands keep only built-ins; skills now use @ references
 def build_slash_palette_entries(prefix: str = "") -> list[tuple[str, str]]:
     """Return command-palette entries for built-in slash commands only (no skills)."""
     normalized = prefix.strip().lower()
@@ -1048,7 +1048,7 @@ def _build_slash_completer() -> Any:
     return _SlashCompleter()
 
 
-# [新增] 2026-07-08 Nyaecho - 新增 @ 补全器，支持任意位置触发 skill 资料引用补全
+# [add] 2026-07-08 Nyaecho - added an @ completer supporting skill-reference completion at any position
 def _build_at_completer() -> Any:
     from prompt_toolkit.completion import Completer, Completion
 
@@ -1490,8 +1490,8 @@ def _get_language_labels() -> dict[str, str]:
 @_register_handler("config")
 @_register_handler("cfg")
 def _cmd_config(session: dict[str, Any], args: str) -> None:
-    # [修改] 2026-07-08 Nyaecho - 修改原因：custom 提供商新增 Base URL 输入步骤
-    # 流程：选择提供商 → (custom) 输入 Base URL → 输入 API Key → 获取模型列表 → 选择/输入模型
+    # [change] 2026-07-08 Nyaecho - reason: the custom provider adds a Base URL input step
+    # Flow: choose provider -> (custom) enter Base URL -> enter API Key -> fetch model list -> select/enter model
     config = session["config"]
     providers = [item["provider"] for item in list_providers()]
     current_provider = config.llm.provider
@@ -1501,20 +1501,20 @@ def _cmd_config(session: dict[str, Any], args: str) -> None:
             nonlocal config
             session["config"] = apply_provider_preset(config, value)
             config = session["config"]
-        # custom 提供商需要先输入 Base URL
+        # The custom provider requires entering the Base URL first
         if value == "custom":
             _set_prompt_input(session,
                             _("tui.prompt_enter_baseurl", url=config.llm.base_url or ""),
                             _on_baseurl)
         else:
-            # 非 custom：直接输入 API Key
+            # Non-custom: enter the API Key directly
             key_status = _("tui.api_key_configured") if config.llm.api_key else _("tui.api_key_not_configured")
             _set_prompt_input(session, _("tui.prompt_enter_apikey", status=key_status), _on_apikey)
 
     def _on_baseurl(value: str) -> None:
         if value:
             config.llm.base_url = value.strip()
-        # 输入完 Base URL 后继续输入 API Key
+        # After entering the Base URL, continue to enter the API Key
         key_status = _("tui.api_key_configured") if config.llm.api_key else _("tui.api_key_not_configured")
         _set_prompt_input(session, _("tui.prompt_enter_apikey", status=key_status), _on_apikey)
 
@@ -1523,14 +1523,14 @@ def _cmd_config(session: dict[str, Any], args: str) -> None:
             config.llm.api_key = value.strip()
         base_url = config.llm.base_url
         api_key = config.llm.api_key
-        # 缺少 base_url/api_key 时跳过获取，直接手动输入
+        # When base_url/api_key is missing, skip fetching and enter manually
         if not base_url or not api_key:
             _set_prompt_input(session, _("tui.prompt_enter_model_fallback", model=config.llm.model), _on_model_input, default=config.llm.model)
             return
-        # prompt_toolkit 版本：同步获取模型列表
+        # prompt_toolkit version: fetch the model list synchronously
         _set_prompt_message(session, _("tui.fetching_models"))
-        # Note: 在 prompt_toolkit 同步循环中，消息不会立即渲染
-        # 直接同步获取模型列表
+        # Note: inside the prompt_toolkit sync loop, messages are not rendered immediately
+        # Fetch the model list synchronously
         models = fetch_provider_models(base_url, api_key)
         if models:
             _set_prompt_choice(session, _("tui.prompt_select_model", model=config.llm.model), models, _on_model_selected)
@@ -1598,7 +1598,7 @@ def _apply_language_pt(session: dict[str, Any], lang: str) -> None:
 
 
 # ── (kept for backward compatibility) ──
-# [修改] 以下旧 Rich/Prompt 函数保留供测试和 CLI 直接调用, 新代码应使用 slash 命令系统
+# [change] The old Rich/Prompt functions below are kept for tests and direct CLI calls; new code should use the slash-command system
 
 
 def render_task_summary(draft: TuiTaskDraft, *, width: int = 100) -> str:
@@ -1668,9 +1668,9 @@ def build_runtime_diagnostic(config) -> TuiRuntimeDiagnostic:
     nmap_status = "installed" if shutil.which("nmap") else "optional/missing"
 
     try:
-        # 修改者: Nyaecho
-        # 修改时间: 2026-07-08
-        # 修改原因: V6 修复 — 从 mcp/diagnostics 导入，消除 CLI→Web 依赖。
+        # Modified by: Nyaecho
+        # Modified: 2026-07-08
+        # Reason: V6 fix — import from mcp/diagnostics, removing the CLI->Web dependency.
         from vulnclaw.mcp.diagnostics import get_mcp_diagnostics
 
         mcp_diag = get_mcp_diagnostics()
@@ -1914,8 +1914,8 @@ def _build_command_preview_args(draft: TuiTaskDraft) -> list[str]:
 
 def build_command_preview_args(draft: TuiTaskDraft, nl_text: str | None = None) -> list[str]:
     """Build a copyable CLI command from a TUI task draft."""
-    # [修改] 2026-06-10 Nyaecho - TUI自然语言驱动: 支持 nl_text 传入并通过 --prompt 传递给CLI子进程
-    # [修改] 2026-06-10 Nyaecho - 添加安全风险提示：通过命令行传递prompt可能暴露给其他本地用户
+    # [change] 2026-06-10 Nyaecho - TUI natural-language driving: accept nl_text and pass it via --prompt to the CLI subprocess
+    # [change] 2026-06-10 Nyaecho - added a security warning: passing the prompt on the command line may expose it to other local users
     args = ["vulnclaw", draft.command, draft.target]
     if nl_text:
         args.extend(["--prompt", nl_text])
@@ -1989,8 +1989,8 @@ def _default_launcher(draft: TuiTaskDraft) -> None:
 
 
 # ── Interactive config editor ──────────────────────────────────────
-# [新增] 从 VulnBot 移植的交互式配置编辑器, 适配 VulnClaw 的 schema
-# (新增 recon 分区, api_key 掩码, 三种 MCP transport, OAuth 字段只读)
+# [add] An interactive config editor ported from VulnBot, adapted to VulnClaw's schema
+# (adds a recon section, api_key masking, three MCP transports, read-only OAuth fields)
 
 
 class _ConfigTuiExit(Exception):

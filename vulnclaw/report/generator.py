@@ -13,22 +13,18 @@ from jinja2 import Template
 
 from vulnclaw import __version__
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V2 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V2 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
 from vulnclaw.config.settings import SESSIONS_DIR
 from vulnclaw.i18n import _, current_lang
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.i18n.phases import localized_phase_name, localized_report_phase_heading
 from vulnclaw.report.filter import ReportContentFilter, deduplicate_report_findings
 from vulnclaw.report.findings_output import write_findings_artifacts
 from vulnclaw.report.poc_builder import generate_pocs
-
-
-def _rl(zh: str, en: str) -> str:
-    """Return the English or Chinese variant based on the active UI language."""
-    return en if current_lang() == "en" else zh
 
 logger = logging.getLogger(__name__)
 
@@ -926,9 +922,9 @@ def _generate_attack_summary_from_session(session: SessionState) -> str:
 
 def _build_report_summary_llm_kwargs(config: Any, messages: list[dict[str, Any]]) -> dict[str, Any]:
     """Build Chat Completions kwargs for report summary generation."""
-    # 修改者: Nyaecho
-    # 修改时间: 2026-07-08
-    # 修改原因: V2 修复 — 直接使用 config/llm_utils，消除 AgentContext shim。
+    # Modified by: Nyaecho
+    # Modified: 2026-07-08
+    # Reason: V2 fix — use config/llm_utils directly, removing the AgentContext shim.
     from vulnclaw.config.llm_utils import build_chat_completion_kwargs
 
     return build_chat_completion_kwargs(
@@ -947,12 +943,12 @@ def generate_persistent_cycle_report(
     total_steps: int,
     rounds_per_cycle: int,
     output_path: Optional[str] = None,
-    llm_attack_summary: str = "",  # ★ LLM 生成的攻击路径摘要
+    llm_attack_summary: str = "",  # ★ LLM-generated attack-path summary
     prev_verified_ids: Optional[set] = None,
 ) -> Path:
     """Generate a cycle report for persistent pentest.
 
-    只包含已验证 (verified=True) 的漏洞。
+    Includes only verified (verified=True) findings.
 
     Args:
         session: Current session state with findings.
@@ -973,7 +969,7 @@ def generate_persistent_cycle_report(
         Path to the generated report file.
     """
 
-    # ★ 包含所有 findings（包括 pending 和 confirmed，不只是 verified）
+    # ★ Include all findings (pending and confirmed, not just verified)
     all_findings = session.findings
     verified_findings = deduplicate_report_findings(session.get_verified_findings())
     manual_review_findings = (
@@ -982,10 +978,10 @@ def generate_persistent_cycle_report(
         else []
     )
 
-    # ★ 本周期新增已验证 findings（只统计 verified）
+    # ★ Verified findings newly added this cycle (verified only)
     if prev_verified_ids is not None:
-        # 按 finding_id 身份判定本周期新验证的漏洞，避免用"全部 findings 增量"
-        # 去切片"已验证子集"导致把往期漏洞误标为本周期新增。
+        # Determine this cycle's newly-verified findings by finding_id identity, instead of an "all-findings delta"
+        # slicing the "verified subset", which would mislabel prior findings as new this cycle.
         cycle_findings = [
             f for f in verified_findings if f.finding_id not in prev_verified_ids
         ]
@@ -1025,7 +1021,7 @@ def generate_persistent_cycle_report(
     # Recent steps (last 20 to avoid bloat)
     recent_steps = session.executed_steps[-20:]
 
-    # ★ 攻击路径摘要（过滤 LLM 原始输出中的 think 标签 / 调试标记）
+    # ★ Attack-path summary (filter out think tags / debug markers from the raw LLM output)
     step_summary = session.get_step_summary()
 
     if not llm_attack_summary:
@@ -1042,7 +1038,7 @@ def generate_persistent_cycle_report(
         "generated_at": datetime.now().isoformat(),
         "version": __version__,
         "cycle_findings": cycle_findings,
-        "all_findings": all_findings,  # ★ 包含所有 findings（包括 pending）
+        "all_findings": all_findings,  # ★ Include all findings (including pending)
         **_severity_count_context(verified_findings),
         "recent_steps": recent_steps,
         "recommendations": recommendations,
@@ -1291,14 +1287,15 @@ def _extract_location_summary(finding: VulnerabilityFinding) -> str:
 def _build_repro_summary(finding: VulnerabilityFinding) -> str:
     parts: list[str] = []
     if finding.poc_script:
-        parts.append(f"运行 PoC 脚本: {finding.poc_script}")
+        parts.append(_rl(f"运行 PoC 脚本: {finding.poc_script}", f"Run PoC script: {finding.poc_script}"))
     if finding.verification_note:
-        parts.append(f"验证说明: {finding.verification_note}")
+        parts.append(_rl(f"验证说明: {finding.verification_note}", f"Verification note: {finding.verification_note}"))
     elif finding.evidence:
-        parts.append(f"根据已验证证据复现: {finding.evidence[:160]}")
+        parts.append(_rl(f"根据已验证证据复现: {finding.evidence[:160]}", f"Reproduce from verified evidence: {finding.evidence[:160]}"))
     if finding.verified_at:
-        parts.append(f"验证时间: {finding.verified_at}")
-    return "；".join(parts) if parts else "暂无可用复现说明"
+        parts.append(_rl(f"验证时间: {finding.verified_at}", f"Verified at: {finding.verified_at}"))
+    sep = _rl("；", "; ")
+    return sep.join(parts) if parts else _rl("暂无可用复现说明", "No reproduction notes available")
 
 
 def _format_task_constraints_summary(session: SessionState) -> str:
@@ -1354,12 +1351,13 @@ def _build_report_finding(finding: VulnerabilityFinding) -> dict[str, Any]:
 def _render_verified_finding_details(findings: list[VulnerabilityFinding], heading: str) -> str:
     lines = [heading, ""]
     for idx, finding in enumerate(findings, 1):
-        location = _extract_location_summary(finding) or "未定位 / 未提取到 URL"
+        location = _extract_location_summary(finding) or _rl("未定位 / 未提取到 URL", "Not located / no URL extracted")
+        vuln_type = finding.vuln_type or _rl("未分类", "Uncategorized")
         lines.append(f"### {idx}. {finding.title} [{finding.severity}]")
-        lines.append(f"- 漏洞类型: {finding.vuln_type or '未分类'}")
-        lines.append(f"- 位置 / URL: {location}")
+        lines.append(_rl(f"- 漏洞类型: {vuln_type}", f"- Vulnerability type: {vuln_type}"))
+        lines.append(_rl(f"- 位置 / URL: {location}", f"- Location / URL: {location}"))
         if finding.evidence:
-            lines.append(f"- 验证证据: {finding.evidence}")
-        lines.append(f"- 复现 / PoC: {_build_repro_summary(finding)}")
+            lines.append(_rl(f"- 验证证据: {finding.evidence}", f"- Verification evidence: {finding.evidence}"))
+        lines.append(_rl(f"- 复现 / PoC: {_build_repro_summary(finding)}", f"- Reproduction / PoC: {_build_repro_summary(finding)}"))
         lines.append("")
     return "\n".join(lines).rstrip()

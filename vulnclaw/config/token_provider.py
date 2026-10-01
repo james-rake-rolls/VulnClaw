@@ -35,6 +35,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
 
+from vulnclaw.i18n import bi as _rl
+
 # Skew subtracted from a token's lifetime so we refresh slightly early.
 _EXPIRY_SKEW_SECONDS = 60.0
 
@@ -167,7 +169,7 @@ def _oauth_token_request(token_url: str, form: dict[str, str], *, attempts: int 
         except urllib.error.HTTPError as exc:
             if exc.code != 429 and 400 <= exc.code < 500:
                 detail = exc.read().decode("utf-8", "replace")[:300] if hasattr(exc, "read") else str(exc)
-                raise OAuthError(f"OAuth token 请求失败 HTTP {exc.code}: {detail}") from exc
+                raise OAuthError(_rl(f"OAuth token 请求失败 HTTP {exc.code}: {detail}", f"OAuth token request failed HTTP {exc.code}: {detail}")) from exc
             last_exc = exc  # 5xx / 429 → retry
         except urllib.error.URLError as exc:
             last_exc = exc  # network / TLS → retry
@@ -176,14 +178,14 @@ def _oauth_token_request(token_url: str, form: dict[str, str], *, attempts: int 
 
     if body is None:
         raise OAuthError(
-            f"OAuth token 端点无法访问（重试 {attempts} 次后失败 / failed after {attempts} retries）: {last_exc}"
+            _rl(f"OAuth token 端点无法访问（重试 {attempts} 次后失败）: {last_exc}", f"OAuth token endpoint unreachable (failed after {attempts} retries): {last_exc}")
         )
     try:
         payload = json.loads(body)
     except json.JSONDecodeError as exc:
-        raise OAuthError(f"OAuth token 端点返回非 JSON: {body[:200]!r}") from exc
+        raise OAuthError(_rl(f"OAuth token 端点返回非 JSON: {body[:200]!r}", f"OAuth token endpoint returned non-JSON: {body[:200]!r}")) from exc
     if "access_token" not in payload:
-        raise OAuthError(f"OAuth 响应缺少 access_token: {body[:200]!r}")
+        raise OAuthError(_rl(f"OAuth 响应缺少 access_token: {body[:200]!r}", f"OAuth response is missing access_token: {body[:200]!r}"))
     return payload
 
 
@@ -257,7 +259,7 @@ def perform_chatgpt_login(*, open_browser: bool = True) -> dict[str, Any]:
         server = HTTPServer(("127.0.0.1", CHATGPT_REDIRECT_PORT), _CallbackHandler)
     except OSError as exc:
         raise OAuthError(
-            f"无法绑定本地端口 {CHATGPT_REDIRECT_PORT}（Codex 重定向要求固定端口）: {exc}"
+            _rl(f"无法绑定本地端口 {CHATGPT_REDIRECT_PORT}（Codex 重定向要求固定端口）: {exc}", f"Cannot bind local port {CHATGPT_REDIRECT_PORT} (the Codex redirect requires a fixed port): {exc}")
         ) from exc
     redirect_uri = f"http://localhost:{CHATGPT_REDIRECT_PORT}{CHATGPT_REDIRECT_PATH}"
 
@@ -328,7 +330,7 @@ def _refresh_oauth(llm: Any, refresh_token: str) -> dict[str, Any]:
     token_url = str(_get(llm, "oauth_token_url") or "").strip()
     client_id = str(_get(llm, "oauth_client_id") or "").strip()
     if not (token_url and client_id):
-        raise OAuthError("OAuth 刷新需要 llm.oauth_token_url 和 llm.oauth_client_id")
+        raise OAuthError(_rl("OAuth 刷新需要 llm.oauth_token_url 和 llm.oauth_client_id", "OAuth refresh requires llm.oauth_token_url and llm.oauth_client_id"))
     payload = _oauth_token_request(
         token_url,
         {
@@ -384,7 +386,7 @@ def resolve_llm_token(llm: Any) -> str:
         return str(_get(llm, "api_key") or "")
     if mode == "oauth":
         return _resolve_oauth_token(llm)
-    raise TokenResolutionError(f"未知的 llm.auth_mode={mode!r}（支持: static/oauth）")
+    raise TokenResolutionError(_rl(f"未知的 llm.auth_mode={mode!r}（支持: static/oauth）", f"Unknown llm.auth_mode={mode!r} (supported: static/oauth)"))
 
 
 def has_llm_credentials(llm: Any) -> bool:

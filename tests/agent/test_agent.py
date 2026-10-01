@@ -64,7 +64,8 @@ class TestVulnerabilityFinding:
         # A bare finding (no evidence/vuln_type/remediation) is quarantined at intake
         # for ANY severity: title prefixed, lifecycle set to needs_manual_review.
         assert "Test Vuln" in finding.title
-        assert finding.title.startswith("[未验证]")
+        # The unverified marker is written in the active UI language.
+        assert finding.title.startswith(("[未验证]", "[Unverified]"))
         assert finding.severity == "Medium"
         assert finding.vuln_type == ""
         assert finding.cve is None
@@ -281,7 +282,7 @@ class TestTargetState:
         assert restored is not None
         assert restored.target == "https://example.com"
         assert restored.phase == PentestPhase.RECON
-        assert "历史成果摘要" in restored.resume_summary
+        assert "历史成果摘要" in restored.resume_summary or "Historical Results Summary" in restored.resume_summary
 
     def test_target_state_merges_findings(self, monkeypatch, tmp_path):
         import vulnclaw.target_state.store as store_mod
@@ -422,7 +423,7 @@ class TestTargetState:
         store_mod.save_target_state("https://example.com", state, command="scan")
         restored = store_mod.hydrate_session_from_target_state("https://example.com")
         assert restored is not None
-        assert "高置信度侦察资产" in restored.resume_summary
+        assert "高置信度侦察资产" in restored.resume_summary or "High-confidence recon assets" in restored.resume_summary
         assert (
             "paths:/admin" in restored.resume_summary
             or "subdomains:vpn.example.com" in restored.resume_summary
@@ -494,9 +495,9 @@ class TestTargetState:
         store_mod.save_target_state("https://example.com", state, command="recon", runtime=runtime)
         restored = store_mod.hydrate_session_from_target_state("https://example.com")
         assert restored is not None
-        assert "已阻塞目标" in restored.resume_summary
-        assert "连续低价值轮次" in restored.resume_summary
-        assert "最近失败路径/步骤" in restored.resume_summary
+        assert "已阻塞目标" in restored.resume_summary or "Blocked targets" in restored.resume_summary
+        assert "连续低价值轮次" in restored.resume_summary or "Consecutive low-value rounds" in restored.resume_summary
+        assert "最近失败路径/步骤" in restored.resume_summary or "Recent failed paths/steps" in restored.resume_summary
 
     def test_target_state_snapshots_and_rollback(self, monkeypatch, tmp_path):
         import vulnclaw.target_state.store as store_mod
@@ -1058,8 +1059,11 @@ class TestAgentCore:
         agent = self._make_agent()
         context = agent._get_active_skill_context(user_input="测试SQL注入")
         assert context is not None
-        # Should match web-security-advanced
-        assert "注入" in context, f"Expected '注入' in skill context for SQL injection input, got: {context[:100]}"
+        # Should match web-security-advanced. Skill content is served in the
+        # active UI language (English by default), so accept either language.
+        assert "注入" in context or "injection" in context.lower(), (
+            f"Expected an SQL-injection skill context, got: {context[:100]}"
+        )
 
     def test_skill_context_reverse(self):
         agent = self._make_agent()
@@ -1394,10 +1398,10 @@ class TestAgentCore:
         round1 = agent._build_round_context(1, 5)
         round5 = agent._build_round_context(5, 5)
 
-        assert "当前任务硬约束" in round1
-        assert "仅允许测试端口: 443" in round1
-        assert "当前任务硬约束" in round5
-        assert "仅允许测试端口: 443" in round5
+        assert "当前任务硬约束" in round1 or "Current Task Hard Constraints" in round1
+        assert "仅允许测试端口: 443" in round1 or "Allowed ports only: 443" in round1
+        assert "当前任务硬约束" in round5 or "Current Task Hard Constraints" in round5
+        assert "仅允许测试端口: 443" in round5 or "Allowed ports only: 443" in round5
 
     @pytest.mark.asyncio
     async def test_persistent_pentest_keeps_constraints_in_followup_cycles(self):
@@ -1425,8 +1429,8 @@ class TestAgentCore:
 
         assert len(captured_inputs) == 2
         assert "只测试 443 端口" in captured_inputs[0]
-        assert "当前任务硬约束" in captured_inputs[1]
-        assert "仅允许测试端口: 443" in captured_inputs[1]
+        assert "当前任务硬约束" in captured_inputs[1] or "Current Task Hard Constraints" in captured_inputs[1]
+        assert "仅允许测试端口: 443" in captured_inputs[1] or "Allowed ports only: 443" in captured_inputs[1]
 
     def test_reset_runtime_state_clears_previous_run_contamination(self):
         from vulnclaw.agent.context import PentestPhase
@@ -1915,7 +1919,7 @@ class TestAgentCoreLoop:
         )
 
         result = await llm_client.call_llm_auto(dummy, "sys", "round")
-        assert "已降级为纯文本结果摘要" in result
+        assert "已降级为纯文本结果摘要" in result or "plain-text result summary" in result
         assert "Status: 200" in result
 
     @pytest.mark.asyncio

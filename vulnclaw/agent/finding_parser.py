@@ -284,6 +284,13 @@ class FindingParser:
             r"报错.*成功|报错.*有效",
             r"UNION.*成功|UNION.*有效",
             r"漏洞确认",
+            # English equivalents (English is the default UI/prompt language).
+            r"successfully extracted[：: ]*\s*\S+",
+            r"command execution succeeded|command executed successfully",
+            r"boolean.*(?:succeeded|worked|valid)",
+            r"error-based.*(?:succeeded|worked|valid)",
+            r"union.*(?:succeeded|worked|valid)",
+            r"vulnerability confirmed|confirmed vulnerability",
         ]
         for pattern in confirmed_markers:
             for match in re.findall(pattern, response, re.IGNORECASE):
@@ -294,6 +301,10 @@ class FindingParser:
         assumption_markers = [
             r"假设[：: ]\s*(.+?)(?:\n|$)",
             r"推测[：: ]\s*(.+?)(?:\n|$)",
+            # English equivalents (English is the default UI/prompt language).
+            r"assumption[：: ]\s*(.+?)(?:\n|$)",
+            r"hypothesis[：: ]\s*(.+?)(?:\n|$)",
+            r"(?:I|we)\s+(?:assume|hypothesize|suspect)(?:\s+that)?[：: ]?\s*(.+?)(?:\n|$)",
         ]
         for pattern in assumption_markers:
             for match in re.findall(pattern, response, re.IGNORECASE):

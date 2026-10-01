@@ -1,7 +1,7 @@
-"""插件结果 → SessionState.findings 的桥接层。
+"""Bridge layer from plugin results to SessionState.findings.
 
-把插件输出的 PluginFinding 转换为 Agent 使用的 VulnerabilityFinding，
-并按 finding_id 去重合并进 SessionState，使插件结果进入报告生成链路。
+Converts the PluginFinding output by a plugin into the VulnerabilityFinding used by the agent,
+and merges it into SessionState with finding_id dedup so plugin results enter the report-generation pipeline.
 """
 
 from __future__ import annotations
@@ -9,14 +9,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V4 违规 — 叶子类型已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V4 violation — leaf types moved to config/domain_models.py.
 from vulnclaw.agent.context import SessionState
 from vulnclaw.config.domain_models import VulnerabilityFinding
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.plugins.result import PluginFinding, PluginResult, RiskLevel
 
-# 插件风险等级 → 漏洞严重度（与 VulnerabilityFinding.severity 取值对齐）
+# Plugin risk level -> finding severity (aligned with VulnerabilityFinding.severity values)
 RISK_TO_SEVERITY: dict[RiskLevel, str] = {
     RiskLevel.INFO: "Info",
     RiskLevel.LOW: "Low",
@@ -27,7 +28,7 @@ RISK_TO_SEVERITY: dict[RiskLevel, str] = {
 
 
 def _evidence_level_for(confidence: float) -> str:
-    """按置信度粗略映射证据等级（插件未主动联网验证，最高给 L2）。"""
+    "Roughly map confidence to an evidence level (plugins do not actively verify over the network, so cap at L2)."
     if confidence >= 0.8:
         return "L2"
     return "L1"
@@ -38,7 +39,7 @@ def plugin_finding_to_vuln_finding(
     *,
     plugin_id: str = "",
 ) -> VulnerabilityFinding:
-    """把单条 PluginFinding 转换为 VulnerabilityFinding。"""
+    "Convert a single PluginFinding into a VulnerabilityFinding."
     evidence_obj = finding.evidence or {}
     try:
         evidence_text = (
@@ -52,7 +53,7 @@ def plugin_finding_to_vuln_finding(
     source = plugin_id or finding.metadata.get("plugin_id", "")
     description = finding.description
     if source:
-        prefix = f"[插件:{source}] "
+        prefix = _rl(f"[插件:{source}] ", f"[Plugin:{source}] ")
         description = f"{prefix}{description}" if description else prefix.strip()
 
     return VulnerabilityFinding(
@@ -71,7 +72,7 @@ def merge_plugin_results_into_session(
     session: SessionState,
     results: PluginResult | list[PluginResult],
 ) -> int:
-    """把一批插件结果中的 finding 合并进 session，返回新增（去重后）数量。"""
+    "Merge the findings from a batch of plugin results into the session and return the number added (after dedup)."
     if isinstance(results, PluginResult):
         results = [results]
 
@@ -85,7 +86,7 @@ def merge_plugin_results_into_session(
 
 
 def summarize_plugin_results(results: list[PluginResult]) -> dict[str, Any]:
-    """汇总一批插件结果，供 CLI / 报告展示。"""
+    "Summarize a batch of plugin results for CLI / report display."
     findings = sum(len(result.findings) for result in results)
     errors = [result for result in results if result.error and not result.skipped]
     skipped = [result for result in results if result.skipped]

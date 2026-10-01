@@ -54,17 +54,17 @@ SKILL_INTENT_MAP: dict[str, list[str]] = {
     "密码学|crypto|cipher|decrypt|encrypt|encode|decode": ["crypto-toolkit"],
     "摩尔电码|凯撒密码|维吉尼亚|培根密码|base58": ["crypto-toolkit"],
     # ── CTF specialized skills ──────────────────────────────────────
-    # ctf-web: CTF Web 攻击知识库
+    # ctf-web: CTF Web attack knowledge base
     "ctf|夺旗|flag|弱比较|空格绕过|正则绕过|rce|代码审计|eval绕过|highlight_file": ["ctf-web"],
     "0e|md5绕过|preg_match绕过|类型绕过|type juggling|弱类型": ["ctf-web"],
     "回显|无回显|blind rce|命令执行绕过|php代码审计|ssti注入": ["ctf-web"],
-    # ctf-crypto: CTF 密码学攻击知识库
+    # ctf-crypto: CTF cryptography attack knowledge base
     "rsa攻击|小指数|共模攻击|wiener|coppersmith|padding oracle": ["ctf-crypto"],
     "ecc攻击|小子群|离散对数|ecdsa|ed25519|pohlig-hellman": ["ctf-crypto"],
     "lfsr|lcg|prng|mt19937|随机数预测|流密码": ["ctf-crypto"],
     "lwe|格攻击|lll|cvp|svp|格基规约": ["ctf-crypto"],
     "古典密码|维吉尼亚|凯撒|栅栏|替换密码|频率分析": ["ctf-crypto"],
-    # ctf-misc: CTF 杂项知识库
+    # ctf-misc: CTF miscellaneous knowledge base
     "pyjail|python沙箱|jail逃逸|sandbox_escape|python jail": ["ctf-misc"],
     "bashjail|bash沙箱|restricted shell|rbash逃逸": ["ctf-misc"],
     "编码链|多层编码|杂项|misc|隐写|stego": ["ctf-misc"],

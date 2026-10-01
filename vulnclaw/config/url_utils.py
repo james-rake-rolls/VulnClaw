@@ -1,10 +1,10 @@
 """URL utility functions — shared across infrastructure and domain layers.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: 消除 V1 违规 — mcp/lifecycle.py 基础设施层不应反向依赖
-         agent/builtin_tools.py 领域层，将纯 URL 工具函数抽取到
-         基础设施层 config/ 包中。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: eliminate a V1 violation — the mcp/lifecycle.py infrastructure layer should not depend back on
+         the agent/builtin_tools.py domain layer; the pure URL helpers were extracted into the
+         config/ infrastructure package.
 """
 
 from __future__ import annotations

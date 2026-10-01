@@ -1,9 +1,9 @@
-﻿"""CLI shared helper functions — extracted from cli/main.py.
+"""CLI shared helper functions — extracted from cli/main.py.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: S2 修复 — 从 cli/main.py（2932 行）提取共享辅助函数到独立模块，
-         为后续命令拆分做准备。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: S2 fix — extracted shared helper functions from cli/main.py (2932 lines) into a standalone
+         module in preparation for later command splitting.
 """
 
 from __future__ import annotations

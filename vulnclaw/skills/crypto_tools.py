@@ -21,6 +21,8 @@ import re
 import urllib.parse
 from typing import Any, Optional
 
+from vulnclaw.i18n import bi as _rl
+
 logger = logging.getLogger(__name__)
 
 # ── Morse Code Tables ────────────────────────────────────────────────
@@ -137,7 +139,7 @@ def _base64_decode(input_str: str, **_) -> dict:
         )
         return {"success": True, "result": decoded}
     except (ValueError, binascii.Error) as e:
-        return {"success": False, "result": "", "error": f"Base64 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Base64 解码失败: {e}", f"Base64 decode failed: {e}")}
 
 
 @_register("base32_encode", "encode", "Base32 编码", ["input"])
@@ -156,7 +158,7 @@ def _base32_decode(input_str: str, **_) -> dict:
         decoded = base64.b32decode(cleaned).decode("utf-8", errors="replace")
         return {"success": True, "result": decoded}
     except (ValueError, binascii.Error) as e:
-        return {"success": False, "result": "", "error": f"Base32 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Base32 解码失败: {e}", f"Base32 decode failed: {e}")}
 
 
 @_register("base58_encode", "encode", "Base58 编码 (Bitcoin)", ["input"])
@@ -175,7 +177,7 @@ def _base58_encode(input_str: str, **_) -> dict:
                 break
         return {"success": True, "result": result or "1"}
     except (ValueError, TypeError) as e:
-        return {"success": False, "result": "", "error": f"Base58 编码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Base58 编码失败: {e}", f"Base58 encode failed: {e}")}
 
 
 @_register("base58_decode", "decode", "Base58 解码 (Bitcoin)", ["input"])
@@ -195,7 +197,7 @@ def _base58_decode(input_str: str, **_) -> dict:
         result_bytes = b"\x00" * leading_zeros + result_bytes
         return {"success": True, "result": result_bytes.decode("utf-8", errors="replace")}
     except (ValueError, binascii.Error) as e:
-        return {"success": False, "result": "", "error": f"Base58 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Base58 解码失败: {e}", f"Base58 decode failed: {e}")}
 
 
 @_register("hex_encode", "encode", "Hex 编码", ["input"])
@@ -216,7 +218,7 @@ def _hex_decode(input_str: str, **_) -> dict:
         decoded = bytes.fromhex(cleaned).decode("utf-8", errors="replace")
         return {"success": True, "result": decoded}
     except (ValueError, UnicodeDecodeError) as e:
-        return {"success": False, "result": "", "error": f"Hex 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Hex 解码失败: {e}", f"Hex decode failed: {e}")}
 
 
 @_register("url_encode", "encode", "URL 编码", ["input"])
@@ -231,7 +233,7 @@ def _url_decode(input_str: str, **_) -> dict:
         decoded = urllib.parse.unquote(input_str.strip())
         return {"success": True, "result": decoded}
     except (ValueError, UnicodeDecodeError) as e:
-        return {"success": False, "result": "", "error": f"URL 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"URL 解码失败: {e}", f"URL decode failed: {e}")}
 
 
 @_register("html_encode", "encode", "HTML 实体编码", ["input"])
@@ -246,7 +248,7 @@ def _html_decode(input_str: str, **_) -> dict:
         decoded = html.unescape(input_str.strip())
         return {"success": True, "result": decoded}
     except (ValueError, UnicodeDecodeError) as e:
-        return {"success": False, "result": "", "error": f"HTML 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"HTML 解码失败: {e}", f"HTML decode failed: {e}")}
 
 
 @_register("unicode_encode", "encode", "Unicode 转义编码 (\\uXXXX)", ["input"])
@@ -261,7 +263,7 @@ def _unicode_decode(input_str: str, **_) -> dict:
         decoded = input_str.strip().encode("ascii", errors="ignore").decode("unicode_escape")
         return {"success": True, "result": decoded}
     except (UnicodeDecodeError, ValueError) as e:
-        return {"success": False, "result": "", "error": f"Unicode 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Unicode 解码失败: {e}", f"Unicode decode failed: {e}")}
 
 
 @_register("rot13_encode", "encode", "ROT13 编码（自逆，编码即解码）", ["input"])
@@ -350,7 +352,7 @@ def _morse_decode(input_str: str, **_) -> dict:
             result.append(" ")
         return {"success": True, "result": "".join(result).strip()}
     except (TypeError, ValueError) as e:
-        return {"success": False, "result": "", "error": f"Morse 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"Morse 解码失败: {e}", f"Morse decode failed: {e}")}
 
 
 # ── Hash Operations ──────────────────────────────────────────────────
@@ -391,7 +393,7 @@ def _jwt_decode(input_str: str, **_) -> dict:
             return {
                 "success": False,
                 "result": "",
-                "error": "JWT 必须包含3部分（header.payload.signature）",
+                "error": _rl("JWT 必须包含3部分（header.payload.signature）", "JWT must contain 3 parts (header.payload.signature)"),
             }
 
         # Decode header (base64url)
@@ -411,7 +413,7 @@ def _jwt_decode(input_str: str, **_) -> dict:
         result = json.dumps({"header": header, "payload": payload}, ensure_ascii=False, indent=2)
         return {"success": True, "result": result}
     except (json.JSONDecodeError, ValueError, binascii.Error, UnicodeDecodeError) as e:
-        return {"success": False, "result": "", "error": f"JWT 解码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"JWT 解码失败: {e}", f"JWT decode failed: {e}")}
 
 
 @_register(
@@ -454,11 +456,11 @@ def _jwt_encode(
         elif algorithm == "none":
             sig_b64 = ""
         else:
-            return {"success": False, "result": "", "error": f"暂不支持算法: {algorithm}"}
+            return {"success": False, "result": "", "error": _rl(f"暂不支持算法: {algorithm}", f"Unsupported algorithm: {algorithm}")}
 
         return {"success": True, "result": f"{signing_input}.{sig_b64}"}
     except (json.JSONDecodeError, ValueError, TypeError) as e:
-        return {"success": False, "result": "", "error": f"JWT 编码失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"JWT 编码失败: {e}", f"JWT encode failed: {e}")}
 
 
 # ── AES Operations ───────────────────────────────────────────────────
@@ -480,7 +482,7 @@ def _aes_encrypt(input_str: str, key: str = "", iv: str = "", **_) -> dict:
         iv_bytes = (iv.encode("utf-8") if iv else key_bytes)[:16]
 
         if len(key_bytes) not in (16, 24, 32):
-            return {"success": False, "result": "", "error": "AES 密钥必须是 16/24/32 字节"}
+            return {"success": False, "result": "", "error": _rl("AES 密钥必须是 16/24/32 字节", "AES key must be 16/24/32 bytes")}
 
         cipher = AES.new(key_bytes, AES.MODE_CBC, iv_bytes)
         padded = pad(input_str.encode("utf-8"), AES.block_size)
@@ -490,10 +492,10 @@ def _aes_encrypt(input_str: str, key: str = "", iv: str = "", **_) -> dict:
         return {
             "success": False,
             "result": "",
-            "error": "需要安装 pycryptodome: pip install pycryptodome",
+            "error": _rl("需要安装 pycryptodome: pip install pycryptodome", "pycryptodome is required: pip install pycryptodome"),
         }
     except (ValueError, TypeError, KeyError) as e:
-        return {"success": False, "result": "", "error": f"AES 加密失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"AES 加密失败: {e}", f"AES encryption failed: {e}")}
 
 
 @_register(
@@ -512,7 +514,7 @@ def _aes_decrypt(input_str: str, key: str = "", iv: str = "", **_) -> dict:
         iv_bytes = (iv.encode("utf-8") if iv else key_bytes)[:16]
 
         if len(key_bytes) not in (16, 24, 32):
-            return {"success": False, "result": "", "error": "AES 密钥必须是 16/24/32 字节"}
+            return {"success": False, "result": "", "error": _rl("AES 密钥必须是 16/24/32 字节", "AES key must be 16/24/32 bytes")}
 
         encrypted = base64.b64decode(input_str.strip())
         cipher = AES.new(key_bytes, AES.MODE_CBC, iv_bytes)
@@ -522,10 +524,10 @@ def _aes_decrypt(input_str: str, key: str = "", iv: str = "", **_) -> dict:
         return {
             "success": False,
             "result": "",
-            "error": "需要安装 pycryptodome: pip install pycryptodome",
+            "error": _rl("需要安装 pycryptodome: pip install pycryptodome", "pycryptodome is required: pip install pycryptodome"),
         }
     except (ValueError, TypeError, KeyError, UnicodeDecodeError) as e:
-        return {"success": False, "result": "", "error": f"AES 解密失败: {e}"}
+        return {"success": False, "result": "", "error": _rl(f"AES 解密失败: {e}", f"AES decryption failed: {e}")}
 
 
 # ── Auto-detect decode ───────────────────────────────────────────────
@@ -542,7 +544,7 @@ def _auto_decode(input_str: str, **_) -> dict:
         try:
             decoded = urllib.parse.unquote(s)
             if decoded != s:
-                results.append(f"[URL 解码] {decoded}")
+                results.append(_rl(f"[URL 解码] {decoded}", f"[URL decode] {decoded}"))
         except Exception:
             pass
 
@@ -551,7 +553,7 @@ def _auto_decode(input_str: str, **_) -> dict:
         try:
             decoded = html.unescape(s)
             if decoded != s:
-                results.append(f"[HTML 解码] {decoded}")
+                results.append(_rl(f"[HTML 解码] {decoded}", f"[HTML decode] {decoded}"))
         except Exception:
             pass
 
@@ -559,7 +561,7 @@ def _auto_decode(input_str: str, **_) -> dict:
     if "\\u" in s:
         try:
             decoded = s.encode("ascii", errors="ignore").decode("unicode_escape")
-            results.append(f"[Unicode 解码] {decoded}")
+            results.append(_rl(f"[Unicode 解码] {decoded}", f"[Unicode decode] {decoded}"))
         except Exception:
             pass
 
@@ -572,7 +574,7 @@ def _auto_decode(input_str: str, **_) -> dict:
                 cleaned += "=" * (4 - missing)
             decoded = base64.b64decode(cleaned).decode("utf-8", errors="strict")
             if decoded and any(c.isprintable() for c in decoded):
-                results.append(f"[Base64 解码] {decoded}")
+                results.append(_rl(f"[Base64 解码] {decoded}", f"[Base64 decode] {decoded}"))
         except Exception:
             pass
 
@@ -585,7 +587,7 @@ def _auto_decode(input_str: str, **_) -> dict:
                 cleaned += "=" * (4 - missing)
             decoded = base64.urlsafe_b64decode(cleaned).decode("utf-8", errors="strict")
             if decoded and any(c.isprintable() for c in decoded):
-                results.append(f"[Base64URL 解码] {decoded}")
+                results.append(_rl(f"[Base64URL 解码] {decoded}", f"[Base64URL decode] {decoded}"))
         except Exception:
             pass
 
@@ -598,7 +600,7 @@ def _auto_decode(input_str: str, **_) -> dict:
                 cleaned += "=" * (8 - missing)
             decoded = base64.b32decode(cleaned).decode("utf-8", errors="strict")
             if decoded:
-                results.append(f"[Base32 解码] {decoded}")
+                results.append(_rl(f"[Base32 解码] {decoded}", f"[Base32 decode] {decoded}"))
         except Exception:
             pass
 
@@ -607,7 +609,7 @@ def _auto_decode(input_str: str, **_) -> dict:
         try:
             decoded = bytes.fromhex(s).decode("utf-8", errors="strict")
             if decoded and any(c.isprintable() for c in decoded):
-                results.append(f"[Hex 解码] {decoded}")
+                results.append(_rl(f"[Hex 解码] {decoded}", f"[Hex decode] {decoded}"))
         except Exception:
             pass
 
@@ -616,7 +618,7 @@ def _auto_decode(input_str: str, **_) -> dict:
         try:
             decoded = _morse_decode(s)
             if decoded["success"]:
-                results.append(f"[Morse 解码] {decoded['result']}")
+                results.append(_rl(f"[Morse 解码] {decoded['result']}", f"[Morse decode] {decoded['result']}"))
         except Exception:
             pass
 
@@ -627,12 +629,12 @@ def _auto_decode(input_str: str, **_) -> dict:
         try:
             decoded = codecs.encode(s, "rot_13")
             if decoded != s:
-                results.append(f"[ROT13 解码] {decoded}")
+                results.append(_rl(f"[ROT13 解码] {decoded}", f"[ROT13 decode] {decoded}"))
         except Exception:
             pass
 
     if not results:
-        return {"success": False, "result": "", "error": "无法自动识别编码类型"}
+        return {"success": False, "result": "", "error": _rl("无法自动识别编码类型", "Could not auto-detect the encoding type")}
 
     return {"success": True, "result": "\n".join(results)}
 
@@ -656,24 +658,91 @@ def execute(operation: str, input_str: str, **kwargs) -> dict:
         return {
             "success": False,
             "result": "",
-            "error": f"未知操作: {operation}。可用操作: {available}",
+            "error": _rl(
+                f"未知操作: {operation}。可用操作: {available}",
+                f"Unknown operation: {operation}. Available operations: {available}",
+            ),
         }
 
     func = OPERATIONS[operation]["function"]
     try:
         return func(input_str=input_str, **kwargs)
     except Exception as e:
-        return {"success": False, "result": "", "error": f"执行 {operation} 时出错: {e}"}
+        return {
+            "success": False,
+            "result": "",
+            "error": _rl(f"执行 {operation} 时出错: {e}", f"Error executing {operation}: {e}"),
+        }
+
+
+# English descriptions for the registered operations. The @_register decorator
+# runs at import time, so the Chinese descriptions it stores cannot be wrapped
+# with _rl() there (the language may still change afterwards via config). These
+# maps are resolved lazily in list_operations() instead, keeping English the
+# default while preserving the Chinese source.
+_OP_DESC_EN: dict[str, str] = {
+    "base64_encode": "Base64 encode",
+    "base64_decode": "Base64 decode",
+    "base32_encode": "Base32 encode",
+    "base32_decode": "Base32 decode",
+    "base58_encode": "Base58 encode (Bitcoin)",
+    "base58_decode": "Base58 decode (Bitcoin)",
+    "hex_encode": "Hex encode",
+    "hex_decode": "Hex decode",
+    "url_encode": "URL encode",
+    "url_decode": "URL decode",
+    "html_encode": "HTML entity encode",
+    "html_decode": "HTML entity decode",
+    "unicode_encode": r"Unicode escape encode (\uXXXX)",
+    "unicode_decode": r"Unicode escape decode (\uXXXX)",
+    "rot13_encode": "ROT13 encode (self-inverse: encoding equals decoding)",
+    "rot13_decode": "ROT13 decode (self-inverse)",
+    "caesar_encode": "Caesar cipher encode (shift cipher)",
+    "caesar_decode": "Caesar cipher decode (brute-force all shifts)",
+    "morse_encode": "Morse code encode",
+    "morse_decode": "Morse code decode",
+    "md5_hash": "MD5 hash",
+    "sha1_hash": "SHA1 hash",
+    "sha256_hash": "SHA256 hash",
+    "sha512_hash": "SHA512 hash",
+    "jwt_decode": "JWT decode (Header + Payload)",
+    "jwt_encode": "JWT encode (requires header, payload, secret)",
+    "aes_encrypt": "AES encrypt (CBC mode, PKCS7 padding)",
+    "aes_decrypt": "AES decrypt (CBC mode, PKCS7 padding)",
+    "auto_decode": "Auto-detect the encoding type and decode (tries all common encodings)",
+}
+
+_PARAM_DESC_EN: dict[str, dict[str, str]] = {
+    "caesar_encode": {"shift": "Shift amount, default 3"},
+    "caesar_decode": {"shift": "Shift amount; if omitted, returns all 25 possibilities"},
+    "jwt_encode": {
+        "header": "JWT header JSON",
+        "secret": "Signing key",
+        "algorithm": "Signing algorithm, default HS256",
+    },
+    "aes_encrypt": {
+        "key": "Key (16/24/32 bytes)",
+        "iv": "Initialization vector (16 bytes, defaults to the key)",
+    },
+    "aes_decrypt": {
+        "key": "Key (16/24/32 bytes)",
+        "iv": "Initialization vector (16 bytes, defaults to the key)",
+    },
+}
 
 
 def list_operations() -> dict[str, dict[str, str]]:
     """List all available operations with their descriptions."""
-    return {
-        name: {
+    result: dict[str, dict[str, str]] = {}
+    for name, info in sorted(OPERATIONS.items()):
+        param_en = _PARAM_DESC_EN.get(name, {})
+        optional = ", ".join(
+            f"{k}({_rl(v, param_en.get(k, v))})" for k, v in info["optional_params"].items()
+        )
+        result[name] = {
             "category": info["category"],
-            "description": info["description"],
+            "description": _rl(info["description"], _OP_DESC_EN.get(name, info["description"])),
             "required_params": ", ".join(info["required_params"]),
-            "optional_params": ", ".join(f"{k}({v})" for k, v in info["optional_params"].items()),
+            "optional_params": optional,
         }
-        for name, info in sorted(OPERATIONS.items())
-    }
+    return result

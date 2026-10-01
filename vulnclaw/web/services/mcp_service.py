@@ -1,9 +1,9 @@
 """MCP diagnostics service for the Web UI backend.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: V6 修复 — get_mcp_diagnostics 已移至 mcp/diagnostics.py，
-         此处重新导出以保持 web 层向后兼容。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: V6 fix — get_mcp_diagnostics moved to mcp/diagnostics.py; re-exported here for web-layer
+         backward compatibility.
 """
 
 from __future__ import annotations

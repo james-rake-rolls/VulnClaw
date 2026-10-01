@@ -11,6 +11,7 @@ import sys
 from typing import Any
 
 from vulnclaw.agent.exec_gate import ApprovalView, ExecutionGate, get_execution_gate
+from vulnclaw.i18n import bi as _rl
 
 _PROMPT_WIDTH = 72
 
@@ -42,7 +43,7 @@ class CliTtyApprovalChannel:
             lines.append(f"  | {raw}")
         if view.expires_at:
             lines.append(
-                f"窗口  {view.expires_in_seconds}s 内未响应将自动拒绝"
+                _rl(f"窗口  {view.expires_in_seconds}s 内未响应将自动拒绝", f"Auto-rejects if no response within {view.expires_in_seconds}s")
             )
         lines.append(f"risk: {view.risk or 'executes with current user privileges'}")
         lines.append(_hr())

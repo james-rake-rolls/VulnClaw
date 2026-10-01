@@ -54,7 +54,11 @@ class TestSkillLoader:
         skill = load_core_skill("pentest-flow")
         assert skill is not None
         assert "content" in skill
-        assert "渗透" in skill["content"]
+        # Content is served in the active UI language; pin each explicitly.
+        zh = load_core_skill("pentest-flow", lang="zh")
+        assert "渗透" in zh["content"]
+        en = load_core_skill("pentest-flow", lang="en")
+        assert "Penetration Test" in en["content"]
 
     def test_load_skill_by_name_core(self):
         from vulnclaw.skills.loader import load_skill_by_name
@@ -192,9 +196,17 @@ class TestSkillLoader:
             "secknowledge-skill", "web-sqli-fushuling-one-pass.md"
         )
         assert content is not None
-        assert "SQL 注入一命通关" in content
+        # Content is served in the active UI language; pin each explicitly.
         assert "fushuling.com" in content
         assert "sqlmap" in content
+        zh = load_skill_reference(
+            "secknowledge-skill", "web-sqli-fushuling-one-pass.md", lang="zh"
+        )
+        assert "SQL 注入一命通关" in zh
+        en = load_skill_reference(
+            "secknowledge-skill", "web-sqli-fushuling-one-pass.md", lang="en"
+        )
+        assert "SQL Injection One-Pass" in en
 
     def test_load_skill_reference_nonexistent(self):
         from vulnclaw.skills.loader import load_skill_reference
@@ -486,11 +498,17 @@ class TestCryptoTools:
         assert result["result"] == "Hello?world"
 
     def test_base64_decode_rejects_invalid_input(self):
+        from vulnclaw.i18n import init_i18n
         from vulnclaw.skills.crypto_tools import execute
 
         result = execute("base64_decode", "!!!!")
         assert result["success"] is False
-        assert "Base64 解码失败" in result["error"]
+        # Error message is served in the active UI language; pin each explicitly.
+        init_i18n("en")
+        assert "Base64 decode failed" in execute("base64_decode", "!!!!")["error"]
+        init_i18n("zh")
+        assert "Base64 解码失败" in execute("base64_decode", "!!!!")["error"]
+        init_i18n("en")
 
     def test_base64_encode(self):
         from vulnclaw.skills.crypto_tools import execute
@@ -557,11 +575,17 @@ class TestCryptoTools:
         assert "HS256" in result["result"]
 
     def test_unknown_operation(self):
+        from vulnclaw.i18n import init_i18n
         from vulnclaw.skills.crypto_tools import execute
 
         result = execute("unknown_op", "test")
         assert result["success"] is False
-        assert "未知操作" in result["error"]
+        # Error message is served in the active UI language; pin each explicitly.
+        init_i18n("en")
+        assert "Unknown operation" in execute("unknown_op", "test")["error"]
+        init_i18n("zh")
+        assert "未知操作" in execute("unknown_op", "test")["error"]
+        init_i18n("en")
 
     def test_unicode_decode(self):
         from vulnclaw.skills.crypto_tools import execute

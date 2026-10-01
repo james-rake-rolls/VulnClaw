@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
 
 
-RECON_MIN_ROUNDS = 8  # 信息收集阶段最低轮数，低于此数 [DONE] 被忽略
+RECON_MIN_ROUNDS = 8  # Minimum rounds for the recon phase; below this, [DONE] is ignored
 
 # ★ Include BOTH tool-result signatures AND natural-language descriptions from notes/confirmed_facts
 RECON_DIM_KEYWORDS: dict[str, list[str]] = {
@@ -141,7 +141,7 @@ def update_recon_dimension_completion(agent: AgentContext, response: str) -> Non
     """Auto-detect which recon dimensions have been explored.
 
     Uses signal-weighted sources instead of blindly scanning all round text.
-    response 参数保留是为了兼容现有调用签名，但逻辑上不使用原始推理文本。
+    The response parameter is kept to preserve the existing call signature but is not used logically.
     """
     note_text = " ".join(agent.context.state.notes[-15:]).lower()
     fact_text = " ".join(getattr(agent.context.state, "confirmed_facts", [])[-15:]).lower()

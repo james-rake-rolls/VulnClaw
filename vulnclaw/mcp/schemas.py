@@ -1,9 +1,9 @@
 """MCP diagnostics schemas — shared view models for MCP service state.
 
-修改者: Nyaecho
-修改时间: 2026-07-08
-修改原因: 消除 V6 违规 — MCP 诊断视图从 web/schemas.py 提取到 mcp/ 包，
-         使 CLI 和 Web 入口层都能从基础设施层获取诊断数据。
+Modified by: Nyaecho
+Modified: 2026-07-08
+Reason: eliminate a V6 violation — the MCP diagnostics views were extracted from web/schemas.py into the
+         mcp/ package so both the CLI and Web entry layers can obtain diagnostics from the infrastructure layer.
 """
 
 from __future__ import annotations

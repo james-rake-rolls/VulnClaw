@@ -29,6 +29,7 @@ from vulnclaw.agent.subagent.tooling import (
 )
 from vulnclaw.agent.tool_result_overrides import pop_raw_tool_output_override
 from vulnclaw.i18n import _
+from vulnclaw.i18n import bi as _rl
 
 if TYPE_CHECKING:
     from vulnclaw.agent.agent_context import AgentContext
@@ -43,7 +44,7 @@ DEFAULT_TOOL_MAX_CONCURRENT = 5
 async def handle_tool_calls(agent: AgentContext, message: Any) -> str:
     """Handle tool calls from the LLM response (legacy single-turn)."""
     results: list[str] = []
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     for tool_call in (getattr(message, "tool_calls", None) or []):
         func_name = tool_call.function.name
         func_args = safe_parse_tool_args(tool_call.function.arguments)
@@ -112,7 +113,7 @@ async def handle_tool_calls_with_results(
     max_calls_per_round = 10
 
     seen: dict[str, dict[str, Any]] = {}
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     for tool_call in (getattr(message, "tool_calls", None) or []):
         func_name = tool_call.function.name
         func_args = safe_parse_tool_args(tool_call.function.arguments)
@@ -127,7 +128,7 @@ async def handle_tool_calls_with_results(
             }
 
     deduplicated = list(seen.values())
-    # [修改] 2026-06-10 Nyaecho - 修复 tool_calls 属性访问问题，使用 getattr 防止 AttributeError
+    # [change] 2026-06-10 Nyaecho - fix tool_calls attribute access, using getattr to prevent AttributeError
     total_count = len(getattr(message, "tool_calls", None) or [])
     dedup_count = len(deduplicated)
 
@@ -320,7 +321,7 @@ async def _execute_single(agent: AgentContext, item: dict[str, Any]) -> dict[str
     except asyncio.CancelledError as exc:
         if not _looks_like_tool_local_cancellation(exc):
             raise
-        logger.warning("工具执行被本地取消 %s: %s", func_name, exc)
+        logger.warning(_rl("工具执行被本地取消 %s: %s", "Tool execution locally cancelled %s: %s"), func_name, exc)
         duration_ms = _elapsed_ms(started)
         content, record, raw = _record_tool_failure_with_record(
             agent, func_name, func_args, exc, duration_ms=duration_ms
@@ -345,7 +346,7 @@ async def _execute_single(agent: AgentContext, item: dict[str, Any]) -> dict[str
             "correction_signal": signal,
         }
     except Exception as exc:
-        logger.warning("工具执行失败 %s: %s", func_name, exc)
+        logger.warning(_rl("工具执行失败 %s: %s", "Tool execution failed %s: %s"), func_name, exc)
         duration_ms = _elapsed_ms(started)
         content, record, raw = _record_tool_failure_with_record(
             agent, func_name, func_args, exc, duration_ms=duration_ms

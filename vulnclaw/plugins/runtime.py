@@ -6,9 +6,9 @@ import time
 from typing import Any
 from urllib.parse import urlparse
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V4 违规 — validate_action_constraints 已移至 config/domain_models.py。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V4 violation — validate_action_constraints moved to config/domain_models.py.
 from vulnclaw.config.domain_models import validate_action_constraints
 from vulnclaw.plugins.base import PluginContext, VulnPlugin
 from vulnclaw.plugins.registry import PluginRegistry, registry
@@ -57,8 +57,8 @@ class PluginRuntime:
             elif timeout is not None:
                 raw = await asyncio.wait_for(asyncio.to_thread(lambda: raw), timeout=timeout)
         except (asyncio.TimeoutError, TimeoutError):
-            # Python 3.10 下 asyncio.wait_for 抛 asyncio.TimeoutError（与内置 TimeoutError
-            # 不是同一类，3.11 起才合并），两者都捕获以保证跨版本一致
+            # On Python 3.10 asyncio.wait_for raises asyncio.TimeoutError (not the same class as the
+            # built-in TimeoutError; merged only from 3.11), so catch both for cross-version consistency
             result = PluginResult.error_result(
                 plugin_id,
                 "Plugin execution timed out",

@@ -159,6 +159,7 @@ def extract_task_constraints(user_input: str) -> TaskConstraints:
 
     blocked_group_patterns = [
         r"(?:不要碰|不要测|禁止测试|禁止扫描|不要扫描)\s*([0-9,\s和及与、]+)(?:\s*端口)?",
+        r"(?:do not|don't|avoid|no)\s+(?:test|scan|touch)(?:ing)?\s+(?:ports?\s+)?([0-9,\s]+)",
     ]
     for pattern in blocked_group_patterns:
         for group in re.findall(pattern, text):
@@ -192,7 +193,11 @@ def extract_task_constraints(user_input: str) -> TaskConstraints:
 
     if any(
         token in lowered
-        for token in ["只测这个路径", "仅测试这个路径", "只测试这个路径", "只测该路径"]
+        for token in [
+            "只测这个路径", "仅测试这个路径", "只测试这个路径", "只测该路径",
+            "only test this path", "test only this path", "only this path",
+            "just this path", "only scan this path",
+        ]
     ):
         path_match = re.search(r"https?://[^\s]+(/[^\s?#]*)", text)
         if not path_match:

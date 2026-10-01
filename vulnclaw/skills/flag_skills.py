@@ -7,10 +7,10 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Literal
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V5 违规 — skills/ 基础设施层不应反向依赖 cli/ 入口层，
-#          改为从 config/cli_constants.py 导入共享数据常量。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V5 violation — the skills/ infrastructure layer should not depend back on the cli/ entry layer,
+#          import shared data constants from config/cli_constants.py instead.
 from vulnclaw.config.cli_constants import COMMANDS, COMMON_TASK_FLAGS, ROOT_OPTIONS
 
 TuiFlagAction = Literal[

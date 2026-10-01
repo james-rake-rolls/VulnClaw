@@ -14,11 +14,12 @@ from urllib.parse import urlparse
 from vulnclaw.config.schema import MCPServerConfig, VulnClawConfig
 from vulnclaw.config.source_render import render_highlighted_source_block
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V1 违规 — mcp/ 基础设施层不应反向依赖 agent/ 领域层，
-#          改为从 config/url_utils.py 导入纯 URL 工具函数。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate a V1 violation — the mcp/ infrastructure layer should not depend back on the agent/ domain layer,
+#          import pure URL helper functions from config/url_utils.py instead.
 from vulnclaw.config.url_utils import infer_port_from_url
+from vulnclaw.i18n import bi as _rl
 from vulnclaw.mcp._probe_mixin import ProbeMixin
 from vulnclaw.mcp.registry import HealthStatus, MCPRegistry
 
@@ -296,7 +297,7 @@ class MCPLifecycleManager(ProbeMixin):
                         started += 1
                 except Exception as e:
                     self.registry.set_server_error(name, str(e), error_type="startup_error")
-        # 如果事件循环在跑，后台预初始化 chrome-devtools session（在主协程入口也会跑）
+        # If the event loop is running, pre-initialize the chrome-devtools session in the background (also runs at the main coroutine entry)
         try:
             loop = asyncio.get_running_loop()
             if "chrome-devtools" in self.config.mcp.servers and self.config.mcp.servers["chrome-devtools"].enabled:
@@ -519,7 +520,7 @@ class MCPLifecycleManager(ProbeMixin):
         # read_timeout_seconds is deliberately unset; per-call timeouts are applied
         # locally via asyncio.wait_for (see _call_attached_server).
         session = ClientSession(read_stream, write_stream)
-        # 进入 ClientSession 上下文以启动 _receive_loop；否则后续调用读不到响应而卡死。
+        # Enter the ClientSession context to start _receive_loop; otherwise later calls hang because they never read a response.
         try:
             await session.__aenter__()
             await asyncio.wait_for(session.initialize(), timeout=startup_s)
@@ -530,7 +531,7 @@ class MCPLifecycleManager(ProbeMixin):
                 await cm.__aexit__(None, None, None)
             raise
 
-        # 发现并注册真实工具名，替换 KNOWN_TOOLS 硬编码的假名
+        # Discover and register the real tool names, replacing the hard-coded placeholder names in KNOWN_TOOLS
         try:
             result = await asyncio.wait_for(session.list_tools(), timeout=10)
             tool_defs = self._normalize_mcp_tools(getattr(result, "tools", []) or [])
@@ -539,7 +540,7 @@ class MCPLifecycleManager(ProbeMixin):
         except BaseException:
             pass
 
-        # 关闭旧 context_manager，避免 GC 回收时 cancel scope 跨 task 冲突
+        # Close the old context_manager to avoid a cross-task cancel-scope conflict during GC
         old_cm = client_meta.get("context_manager") if isinstance(client_meta, dict) else None
         if old_cm is not None and old_cm is not cm:
             with _suppress_cleanup_errors():
@@ -624,7 +625,7 @@ class MCPLifecycleManager(ProbeMixin):
                 f"streamable-http session for {server_name} failed: {detail}"
             ) from None
 
-        # 首次连接时发现真实工具并替换启动时注册的静态占位工具
+        # On first connect, discover the real tools and replace the static placeholder tools registered at startup
         try:
             tools = await asyncio.wait_for(session.list_tools(), timeout=read_s)
             tool_defs = self._normalize_mcp_tools(getattr(tools, "tools", []) or [])
@@ -1363,8 +1364,8 @@ class MCPLifecycleManager(ProbeMixin):
                         suggestion="Start the Burp MCP service and verify the proxy integration is ready.",
                     )
 
-            # 通用路径：任何经 SDK attach 成功的 stdio/streamable-http 服务（如自定义
-            # streamable-mcp-server）都走真实会话调用，而不是回落到 unsupported。
+            # General path: any stdio/streamable-http service successfully attached via the SDK (such as a custom
+            # streamable-mcp-server) uses a real session call instead of falling back to unsupported.
             if self._is_sdk_attachable(server_name):
                 try:
                     content, structured = await self._call_attached_server(
@@ -1469,9 +1470,9 @@ class MCPLifecycleManager(ProbeMixin):
             return self._format_fetch_response(response, request)
 
         except ImportError:
-            return "[!] httpx 未安装，无法执行 fetch 请求"
+            return _rl("[!] httpx 未安装，无法执行 fetch 请求", "[!] httpx is not installed; cannot perform the fetch request")
         except Exception as e:
-            return f"[!] fetch 请求失败: {e}"
+            return _rl(f"[!] fetch 请求失败: {e}", f"[!] fetch request failed: {e}")
 
     def _prepare_fetch_request(self, args: dict) -> dict[str, Any]:
         url = str(args.get("url", "") or "").strip()
@@ -1630,11 +1631,11 @@ class MCPLifecycleManager(ProbeMixin):
 
         if tool_name == "save":
             store.save(args.get("key", ""), args.get("value", ""))
-            return f"[+] 已保存: {args.get('key', '')}"
+            return _rl(f"[+] 已保存: {args.get('key', '')}", f"[+] Saved: {args.get('key', '')}")
         elif tool_name == "retrieve":
             value = store.retrieve(args.get("key", ""))
-            return str(value) if value else "[-] 未找到"
-        return "[!] 未知 memory 工具"
+            return str(value) if value else _rl("[-] 未找到", "[-] Not found")
+        return _rl("[!] 未知 memory 工具", "[!] Unknown memory tool")
 
     async def _call_attached_server(
         self, server_name: str, tool_name: str, args: dict

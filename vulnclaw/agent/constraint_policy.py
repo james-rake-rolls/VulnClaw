@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-# 修改者: Nyaecho
-# 修改时间: 2026-07-08
-# 修改原因: 消除 V2/V3/V4 违规 — 叶子类型已移至 config/domain_models.py，
-#          此处从 config 导入并重新导出共享策略函数。
+# Modified by: Nyaecho
+# Modified: 2026-07-08
+# Reason: eliminate V2/V3/V4 violations — leaf types moved to config/domain_models.py,
+#          import and re-export the shared policy functions from config here.
 from vulnclaw.config.domain_models import (
     PHASE_TO_ACTION,
     PentestPhase,
@@ -42,7 +42,7 @@ def validate_phase_transition(
     return f"{violation} (phase transition to {phase_display_name(next_phase)})"
 
 
-# 纯本地/知识类工具：不与目标交互，不纳入「动作范围」约束
+# Pure local/knowledge tools: do not interact with the target, excluded from the "action scope" constraint
 LOCAL_META_TOOLS = {
     "evidence_list",
     "evidence_search",
@@ -55,7 +55,7 @@ LOCAL_META_TOOLS = {
     "agent_job",
 }
 
-# 真正代表「利用」意图的攻击载荷特征——与传输方式（HTTP 方法/网络库）无关
+# Payload signatures that truly indicate "exploitation" intent — independent of transport (HTTP method / network library)
 EXPLOIT_PAYLOAD_MARKERS = [
     "union select",
     " or 1=1",
@@ -80,7 +80,7 @@ EXPLOIT_PAYLOAD_MARKERS = [
     "powershell -e",
 ]
 
-# python_execute 中代表本地命令执行/反弹 shell 的特征
+# Signatures of local command execution / reverse shell inside python_execute
 PYTHON_EXPLOIT_MARKERS = [
     "os.system",
     "subprocess",
@@ -95,13 +95,14 @@ PYTHON_EXPLOIT_MARKERS = [
 def infer_tool_action(tool_name: str, args: dict[str, object]) -> str:
     """Infer the effective action class of a tool invocation.
 
-    关键原则：只有「实际攻击载荷」才推断为 exploit；HTTP 方法、是否用 requests/urllib
-    等传输细节不构成利用意图（recon/scan 阶段本就需要发 POST/OPTIONS、用 requests 探测）。
+    Key principle: only an "actual attack payload" is inferred as exploit; the HTTP method and
+    whether requests/urllib is used are transport details that do not constitute exploitation intent
+    (the recon/scan phases legitimately need to send POST/OPTIONS and probe with requests).
     """
     normalized_tool = (tool_name or "").strip().lower()
 
     if normalized_tool in LOCAL_META_TOOLS:
-        return "recon"  # 仅本地操作，配合 validate_tool_action 豁免
+        return "recon"  # Local-only operations, exempted together with validate_tool_action
 
     # Intel tools: read-only lookups (no target egress) and active recon
     # (low-impact target/3rd-party contact) both classify as passive "recon".
@@ -122,7 +123,7 @@ def infer_tool_action(tool_name: str, args: dict[str, object]) -> str:
         )
         if any(marker in url or marker in payload_surface for marker in EXPLOIT_PAYLOAD_MARKERS):
             return "exploit"
-        # 方法本身不代表利用：GET/HEAD/OPTIONS 属侦察，其它（POST 测表单等）属扫描
+        # The method alone is not exploitation: GET/HEAD/OPTIONS are recon, others (POST form testing, etc.) are scanning
         if method in ("GET", "HEAD", "OPTIONS"):
             return "recon"
         return "scan"
@@ -150,7 +151,7 @@ def infer_tool_action(tool_name: str, args: dict[str, object]) -> str:
         code = str(args.get("code", "") or "").lower()
         if any(marker in code for marker in EXPLOIT_PAYLOAD_MARKERS + PYTHON_EXPLOIT_MARKERS):
             return "exploit"
-        # 用 requests/httpx/urllib/socket 做 HTTP 探测属扫描，而非利用
+        # HTTP probing via requests/httpx/urllib/socket is scanning, not exploitation
         if any(m in code for m in ("requests.", "httpx.", "urllib", "http.client", "socket")):
             return "scan"
         return "recon"
@@ -185,7 +186,7 @@ def validate_tool_action(
     tool_name: str, args: dict[str, object], constraints: TaskConstraints
 ) -> str | None:
     """Return a constraint violation when a tool invocation implies a blocked action."""
-    # 纯本地/知识类工具不受动作范围约束（加载文档、编解码不触碰目标）
+    # Pure local/knowledge tools are not bound by the action scope (loading docs, encoding/decoding do not touch the target)
     if (tool_name or "").strip().lower() in LOCAL_META_TOOLS:
         return None
     inferred = infer_tool_action(tool_name, args)

@@ -69,7 +69,7 @@ class ReflexionEngine(BaseModel):
             return
 
         self.state.consecutive_failures += 1
-        # 不把占位符 "unknown"/空路径塞进失败路径列表，避免污染失败历史与归因
+        # Do not push the placeholder "unknown"/empty path into the failed-path list, to avoid polluting failure history and attribution
         if path and path != "unknown":
             self.state.failed_paths.append(path)
 
@@ -165,8 +165,8 @@ class ReflexionEngine(BaseModel):
         return list(dict.fromkeys(self.state.failed_paths))
 
     def to_prompt_block(self) -> str:
-        """轻量状态块（每轮注入）。详细的失败模式/升级提示只在 to_reflection_prompt
-        触发反思时输出，避免与本块重复注入、浪费 token。"""
+        """Lightweight state block (injected every round). Detailed failure modes / escalation hints are emitted
+        only when to_reflection_prompt triggers reflexion, to avoid duplicating this block and wasting tokens."""
         if not self.state.attempts and not self.state.reflections:
             return ""
 
@@ -186,7 +186,7 @@ class ReflexionEngine(BaseModel):
         return "\n".join(lines)
 
     def to_reflection_prompt(self) -> str:
-        """反思接管指令，仅在 should_reflect() 触发时输出；承载详细失败归因 + 升级提示。"""
+        "Reflexion takeover instruction, emitted only when should_reflect() fires; carries detailed failure attribution + escalation hints."
         if not self.should_reflect():
             return ""
 
@@ -270,7 +270,7 @@ def classify_failure(response_text: str) -> FailureCategory | None:
             "connection refused",
             "bad gateway",
             "service unavailable",
-            # 中文
+            # Chinese
             "被拦截",
             "被过滤",
             "被waf",
@@ -292,7 +292,7 @@ def classify_failure(response_text: str) -> FailureCategory | None:
             "false positive",
             "dead end",
             "wrong attack surface",
-            # 中文
+            # Chinese
             "不存在该漏洞",
             "没有漏洞",
             "无漏洞",
@@ -315,7 +315,7 @@ def classify_failure(response_text: str) -> FailureCategory | None:
             "malformed",
             "parse error",
             "delimiter",
-            # 中文
+            # Chinese
             "参数错误",
             "参数不对",
             "payload无效",
@@ -334,7 +334,7 @@ def classify_failure(response_text: str) -> FailureCategory | None:
             "collect more",
             "fingerprint first",
             "enumerate first",
-            # 中文
+            # Chinese
             "需要更多信息",
             "信息不足",
             "未知参数",
